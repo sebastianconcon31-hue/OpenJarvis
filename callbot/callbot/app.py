@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 import re
 from contextlib import asynccontextmanager
 
@@ -72,6 +73,11 @@ async def lifespan(_app: FastAPI):
 
 
 app = FastAPI(title="CallBot", lifespan=lifespan)
+
+if os.environ.get("DEMO_ENABLED", "").lower() in ("1", "true", "yes"):
+    from .demo import make_demo_router
+
+    app.include_router(make_demo_router(salon, settings, llm, os.environ.get("DEMO_PASSWORD", "")))
 
 
 @app.get("/")

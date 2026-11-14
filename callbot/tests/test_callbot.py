@@ -238,3 +238,33 @@ def test_parse_webhook_and_signature():
 def test_store_dedupes_messages():
     s = Store()
     assert s.first_time_seen("m1") and not s.first_time_seen("m1")
+
+
+# ---------------- web demo ----------------
+
+def test_demo_chat_books_into_practice_calendar():
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+
+    from callbot.config import Settings
+    from callbot.demo import make_demo_router
+
+    tomorrow = (datetime.now(TZ) + timedelta(days=1))
+    while tomorrow.weekday() in (0, 6):  # example salon is closed Sun/Mon
+        tomorrow += timedelta(days=1)
+    d = tomorrow.date().isoformat()
+    llm = FakeLLM([
+        [("book_appointment", {"service": "Barba", "date": d, "time": "10:00", "customer_name": "Demo"})],
+        "Prenotato!",
+    ])
+    app = FastAPI()
+    app.include_router(make_demo_router(SALON, Settings(), llm, password="pw"))
+    c = TestClient(app)
+    assert c.post("/demo/chat", json={"session": "123", "text": "ciao", "password": "no"}).status_code == 401
+    r = c.post("/demo/chat", json={"session": "123", "text": "barba alle 10", "password": "pw"}).json()
+    assert r["replies"][0] == ai_notice(SALON) and r["replies"][-1] == "Prenotato!"
+    agenda = c.get("/demo/agenda", params={"password": "pw"}).json()["appointments"]
+    assert len(agenda) == 1 and agenda[0]["service"] == "Barba"
+    assert "Barberia" in c.get("/demo").text
+    c.post("/demo/reset", json={"session": "123", "text": "", "password": "pw"})
+    assert c.get("/demo/agenda", params={"password": "pw"}).json()["appointments"] == []

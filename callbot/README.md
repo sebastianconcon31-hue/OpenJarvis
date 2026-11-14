@@ -66,7 +66,20 @@ require you to be 18. Plan about two hours the first time.
    ```
 3. Chat with it in Italian, as if you were a customer. Try booking, asking prices, asking for "operatore".
 
+### 1b. Web demo: try it in a browser, no WhatsApp needed
+
+With `DEMO_ENABLED=1` in `.env`, the bot also serves a page that looks like a WhatsApp chat at
+`/demo` (on your computer: run `uvicorn callbot.app:app` and open http://localhost:8000/demo).
+A side panel shows the practice calendar and the alerts the owner would get. Bookings made there
+never touch the real calendar. Online, set `DEMO_PASSWORD` so strangers can't use up the free AI
+quota. It's also a good way to show the salon owner how the bot behaves before going live.
+
 ### 2. Meta / WhatsApp (30 minutes)
+
+Meta only lets a **verified business** send messages. If WhatsApp Manager says "Account restricted,
+verify your business" (error 131031), the salon needs to verify its own Meta Business portfolio and
+add you as a developer. Use the web demo until then.
+
 
 1. Go to https://developers.facebook.com, create an app, type **Business**, and add the **WhatsApp** product.
 2. In **WhatsApp > API Setup** you get a free **test number**. Add your own phone as a recipient to test.
