@@ -1,0 +1,64 @@
+# ---------------------------------------------------------------
+# Salon settings. Copy this file to salon.yaml and fill it in.
+# Everything the bot knows about the shop lives here, so changing
+# a price or the hours never needs a code change.
+# The values below are EXAMPLES, not the real salon's details.
+# ---------------------------------------------------------------
+
+name: "Barberia Esempio"
+address: "Corso Palladio 1, 36100 Vicenza VI"
+timezone: "Europe/Rome"
+
+# Owner's personal WhatsApp number (international format, digits only).
+# The bot messages this number when it hands a chat over.
+owner_phone: "393331234567"
+
+# How the bot talks.
+formal: true          # true = "Lei", false = "tu"
+languages: ["it", "en"]  # it replies in Italian, or English if the customer writes in English
+
+# Services: name, price in euro, length in minutes.
+services:
+  - name: "Taglio uomo"
+    price: 15
+    minutes: 30
+  - name: "Taglio + barba"
+    price: 22
+    minutes: 45
+  - name: "Barba"
+    price: 10
+    minutes: 20
+  - name: "Taglio bambino"
+    price: 12
+    minutes: 30
+
+# People who cut hair. If there is more than one, two customers can be
+# booked at the same time. Customers may ask for a specific person.
+barbers: ["Marco"]
+
+# Opening hours. Use "closed" for a day off. Several ranges = lunch break.
+hours:
+  monday: closed
+  tuesday: ["09:00-12:30", "15:00-19:30"]
+  wednesday: ["09:00-12:30", "15:00-19:30"]
+  thursday: ["09:00-12:30", "15:00-19:30"]
+  friday: ["09:00-12:30", "15:00-19:30"]
+  saturday: ["08:30-18:00"]
+  sunday: closed
+
+# Specific days the shop is closed (holidays, vacations). YYYY-MM-DD.
+closed_dates:
+  - "2026-12-25"
+  - "2026-12-26"
+  - "2027-01-01"
+
+booking:
+  max_days_ahead: 30        # how far ahead people can book
+  min_notice_minutes: 60    # no bookings starting sooner than this
+  slot_step_minutes: 15     # appointments start on :00, :15, :30, :45
+  allow_cancel: true        # customers can cancel through the bot
+  allow_reschedule: true    # customers can move their appointment through the bot
+
+# Anything else the bot should know (parking, payment, etc.). Free text.
+extra_info: |
+  Si accettano contanti e carte. Parcheggio a pagamento nelle vicinanze.
