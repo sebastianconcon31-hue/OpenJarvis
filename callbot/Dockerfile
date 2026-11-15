@@ -3,7 +3,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY callbot ./callbot
-COPY faq.yaml .
+COPY faq.yaml salon.example.yaml ./
 ENV PYTHONUNBUFFERED=1
 EXPOSE 8000
 CMD ["uvicorn", "callbot.app:app", "--host", "0.0.0.0", "--port", "8000"]

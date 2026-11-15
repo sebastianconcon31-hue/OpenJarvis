@@ -87,7 +87,11 @@ def _parse_time(s: str) -> time:
 
 
 def load_salon(path: str | Path) -> Salon:
-    data = yaml.safe_load(Path(path).read_text(encoding="utf-8"))
+    p = Path(path)
+    if not p.exists() and p.name == "salon.yaml" and (p.parent / "salon.example.yaml").exists():
+        # No real salon set up yet: run with the example values (handy for the demo).
+        p = p.parent / "salon.example.yaml"
+    data = yaml.safe_load(p.read_text(encoding="utf-8"))
     hours: dict[int, list[tuple[time, time]]] = {}
     for i, day in enumerate(WEEKDAYS):
         raw = (data.get("hours") or {}).get(day, "closed")
