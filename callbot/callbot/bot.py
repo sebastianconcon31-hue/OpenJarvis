@@ -74,7 +74,17 @@ def error_reply(salon: Salon, lang: str = "it") -> str:
     return "Scusa, in questo momento ho un problema tecnico. Ho avvisato il titolare, che ti risponderà appena possibile."
 
 
-def build_system_prompt(salon: Salon, now: datetime, profile_name: str, phone: str) -> str:
+def looks_broken(text: str) -> bool:
+    """Catches the rare times a model "glitches" and writes rambling nonsense."""
+    if len(text) > 1500:
+        return True
+    dots = len(re.findall(r"(\.\.\.|…)", text))
+    lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+    repeated = len(lines) - len(set(lines))
+    return dots > 8 or repeated > 4
+
+
+def build_system_prompt(salon: Salon, now: datetime, profile_name: str, phone: str, lang: str = "it") -> str:
     services = "\n".join(f"- {s.name}: €{s.price:g}, circa {s.minutes} minuti" for s in salon.services)
     hours = []
     for i, g in enumerate(GIORNI):
@@ -97,12 +107,14 @@ def build_system_prompt(salon: Salon, now: datetime, profile_name: str, phone: s
         can.append("spostare (prenota il nuovo orario, poi cancella il vecchio)")
     manage = ("Puoi " + " e ".join(can) + " gli appuntamenti del cliente.") if can else (
         "Non puoi cancellare o spostare appuntamenti: per questo passa la chat al titolare.")
+    lang_now = ("IMPORTANTE: l'ultimo messaggio del cliente è in inglese, quindi rispondi in inglese."
+                if lang == "en" else "")
     english = ("Se il cliente scrive in inglese, rispondi in inglese." if "en" in salon.languages
                else "Rispondi sempre in italiano.")
     multi = (f"Barbieri: {barbers}. Il cliente può chiedere un barbiere preciso; se non lo chiede, va bene chiunque."
              if len(salon.barbers) > 1 else "")
     return f"""Sei l'assistente virtuale di {salon.name}, un salone a Vicenza. Rispondi su WhatsApp ai clienti.
-{tono} {english} Scrivi messaggi brevi e naturali, come una persona su WhatsApp: niente elenchi lunghi, niente markdown, al massimo un'emoji ogni tanto.
+{tono} {english} {lang_now} Scrivi messaggi brevi e naturali, come una persona su WhatsApp: niente elenchi lunghi, niente markdown, al massimo un'emoji ogni tanto.
 
 INFORMAZIONI DEL SALONE
 Nome: {salon.name}
@@ -250,7 +262,7 @@ class Receptionist:
             return sent
 
         try:
-            reply, handed_off = self._think(phone, profile_name)
+            reply, handed_off = self._think(phone, profile_name, lang)
         except Exception:  # noqa: BLE001 - never leave a customer without an answer
             log.exception("AI step failed for %s", phone)
             self._handoff(phone, f"Errore tecnico del bot. Ultimo messaggio del cliente: \"{text}\"")
@@ -262,18 +274,25 @@ class Receptionist:
         return sent
 
     # -- the AI loop ---------------------------------------------------------
-    def _think(self, phone: str, profile_name: str) -> tuple[str, bool]:
+    def _think(self, phone: str, profile_name: str, lang: str = "it") -> tuple[str, bool]:
         now = self.booking.now()
         since = time.time() - 3 * 86400  # only the last few days of chat matter
-        messages = [{"role": "system", "content": build_system_prompt(self.salon, now, profile_name, phone)}]
+        messages = [{"role": "system", "content": build_system_prompt(self.salon, now, profile_name, phone, lang)}]
         messages += self.store.history(phone, self.settings.history_messages, since)
         tools = tool_specs(self.salon, with_faq=self.faq is not None)
         handed_off = False
+        retries = 0
         for _ in range(self.MAX_STEPS):
             msg = self.llm.chat(messages, tools)
             calls = msg.get("tool_calls") or []
             if not calls:
                 content = (msg.get("content") or "").strip()
+                if looks_broken(content) and retries < 2:
+                    retries += 1  # ask again; glitches are random and rarely repeat
+                    log.warning("Discarded a broken AI reply (%d chars)", len(content))
+                    continue
+                if looks_broken(content):
+                    raise LLMError("broken reply")
                 if not content and not handed_off:
                     raise LLMError("empty reply")
                 return content, handed_off

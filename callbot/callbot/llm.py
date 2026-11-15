@@ -24,7 +24,8 @@ class LLM:
 
     def chat(self, messages: list[dict], tools: list[dict] | None = None) -> dict:
         """Send the conversation, get back the assistant's message (may contain tool calls)."""
-        body: dict = {"model": self.model, "messages": messages, "temperature": 0.3}
+        body: dict = {"model": self.model, "messages": messages, "temperature": 0.3,
+                      "max_tokens": 2000}  # includes the model's hidden thinking; stops runaway answers
         if tools:
             body["tools"] = tools
             body["tool_choice"] = "auto"

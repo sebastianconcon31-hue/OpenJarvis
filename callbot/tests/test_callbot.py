@@ -343,3 +343,15 @@ def test_opening_message_matches_customer_language():
     bot2, *_, sent2, _ = make_bot(["non serve"])
     bot2.handle("392", "I want to talk to a real person", "Tom")
     assert sent2[-1][1] == handoff_reply(SALON, "en")
+
+
+def test_broken_ai_reply_is_retried_and_english_is_requested():
+    from callbot.bot import looks_broken
+
+    garbage = "Ecco il listino:\n" + "\n\n... \n\n... ".join(["Sorry…"] * 20)
+    assert looks_broken(garbage)
+    assert not looks_broken("Our prices: men's cut €15, beard €10. Want to book?")
+    bot, llm, *_, sent, _ = make_bot([garbage, "Our men's cut is €15."])
+    bot.handle("391", "ok, what are your prices?", "Tom")
+    assert sent[-1][1] == "Our men's cut is €15."
+    assert "rispondi in inglese" in llm.calls[0][0]["content"]
