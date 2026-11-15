@@ -1,0 +1,6 @@
+.env
+salon.yaml
+google-credentials.json
+data/
+__pycache__/
+.pytest_cache/
