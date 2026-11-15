@@ -307,7 +307,7 @@ class Receptionist:
                 content = (msg.get("content") or "").strip()
                 if looks_broken(content) and retries < 2:
                     retries += 1  # ask again; glitches are random and rarely repeat
-                    log.warning("Discarded a broken AI reply (%d chars)", len(content))
+                    log.warning("Discarded a broken AI reply (%d chars): %r", len(content), content[:300])
                     continue
                 if looks_broken(content):
                     raise LLMError("broken reply")
