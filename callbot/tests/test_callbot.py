@@ -268,3 +268,64 @@ def test_demo_chat_books_into_practice_calendar():
     assert "Barberia" in c.get("/demo").text
     c.post("/demo/reset", json={"session": "123", "text": "", "password": "pw"})
     assert c.get("/demo/agenda", params={"password": "pw"}).json()["appointments"] == []
+
+
+# ---------------- the 150 common questions ----------------
+
+def test_faq_has_150_unique_bilingual_entries_with_known_placeholders():
+    import re as _re
+
+    from callbot.faq import AUTO, load_faq
+
+    entries = load_faq(ROOT / "faq.yaml")
+    assert len(entries) == 150
+    assert len({e.id for e in entries}) == 150
+    for e in entries:
+        assert e.q_it and e.q_en and e.a_it and e.a_en, e.id
+        for text in (e.a_it, e.a_en):
+            for ph in _re.findall(r"\{(\w+)\}", text):
+                assert ph in AUTO or ph in e.needs, (e.id, ph)
+        # Every fact an answer uses is listed in the example salon file
+        for k in e.needs:
+            assert k in SALON.facts, (e.id, k)
+
+
+def test_faq_search_finds_its_own_questions():
+    from callbot.faq import FAQ, load_faq
+
+    entries = load_faq(ROOT / "faq.yaml")
+    faq = FAQ(entries, SALON)
+    total = found = 0
+    for e in entries:
+        for q in e.q_it:
+            total += 1
+            found += e.id in [r["id"] for r in faq.search(q, "it")]
+    assert found / total > 0.97
+
+
+def test_faq_fills_salon_facts_and_never_guesses_missing_ones():
+    from callbot.faq import FAQ, load_faq
+
+    faq = FAQ(load_faq(ROOT / "faq.yaml"), SALON)
+    prices = faq.search("quanto costa un taglio")[0]
+    assert prices["id"] == "prezzi" and "Taglio uomo €15" in prices["answer"]
+    park = faq.search("is there parking", "en")[0]
+    assert park["id"] == "parcheggio" and "car park" in park["answer"]
+    wifi = faq.search("avete il wifi?")[0]
+    assert wifi["id"] == "wifi" and wifi["answer"] is None and wifi["missing_info"] == ["wifi"]
+    assert "{" not in prices["answer"]
+
+
+def test_bot_uses_faq_tool():
+    from callbot.faq import FAQ, load_faq
+
+    script = [[("search_faq", {"query": "dove parcheggio?"})], "C'è un parcheggio a 2 minuti a piedi."]
+    sent, owner = [], []
+    llm = FakeLLM(script)
+    bot = Receptionist(SALON, Settings(), llm, make_booking(), Store(),
+                       lambda p, t: sent.append(t), lambda *a: owner.append(a),
+                       FAQ(load_faq(ROOT / "faq.yaml"), SALON))
+    bot.handle("391", "dove posso parcheggiare?", "Luca")
+    result = json.loads(llm.calls[1][-1]["content"])
+    assert result["results"][0]["id"] == "parcheggio"
+    assert sent[-1].startswith("C'è un parcheggio")

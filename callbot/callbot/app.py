@@ -17,6 +17,7 @@ from .agenda import make_calendar
 from .booking import Booking
 from .bot import Receptionist
 from .config import load_dotenv, load_salon, load_settings
+from .faq import FAQ, load_faq
 from .llm import LLM, transcribe
 from .reminders import send_due_reminders
 from .store import Store
@@ -33,6 +34,7 @@ calendar = make_calendar(settings)
 booking = Booking(salon, calendar)
 wa = WhatsApp(settings.wa_token, settings.wa_phone_number_id, settings.wa_api_version)
 llm = LLM(settings.llm_base_url, settings.llm_api_key, settings.llm_model)
+faq = FAQ(load_faq(settings.faq_file), salon) if os.path.exists(settings.faq_file) else None
 
 
 def notify_owner(customer_phone: str, customer_name: str, reason: str) -> None:
@@ -49,7 +51,7 @@ def notify_owner(customer_phone: str, customer_name: str, reason: str) -> None:
                          [customer_name or "cliente", f"+{customer_phone}", clean])
 
 
-receptionist = Receptionist(salon, settings, llm, booking, store, wa.send_text, notify_owner)
+receptionist = Receptionist(salon, settings, llm, booking, store, wa.send_text, notify_owner, faq)
 
 
 async def reminder_loop() -> None:
@@ -77,7 +79,7 @@ app = FastAPI(title="CallBot", lifespan=lifespan)
 if os.environ.get("DEMO_ENABLED", "").lower() in ("1", "true", "yes"):
     from .demo import make_demo_router
 
-    app.include_router(make_demo_router(salon, settings, llm, os.environ.get("DEMO_PASSWORD", "")))
+    app.include_router(make_demo_router(salon, settings, llm, os.environ.get("DEMO_PASSWORD", ""), faq))
 
 
 @app.get("/")

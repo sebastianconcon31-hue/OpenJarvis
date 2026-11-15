@@ -14,6 +14,7 @@ from .agenda import LocalCalendar
 from .booking import Booking
 from .bot import Receptionist
 from .config import load_dotenv, load_salon, load_settings
+from .faq import FAQ, load_faq
 from .llm import LLM
 from .store import Store
 
@@ -34,7 +35,8 @@ def main() -> None:
     def notify_owner(phone: str, name: str, reason: str) -> None:
         print(f"\n📣 [al titolare] Chat da gestire: {name} +{phone}: {reason}\n")
 
-    bot = Receptionist(salon, settings, llm, booking, Store(), send, notify_owner)
+    faq = FAQ(load_faq(settings.faq_file), salon)
+    bot = Receptionist(salon, settings, llm, booking, Store(), send, notify_owner, faq)
     phone = "393400000000"
     print(f"Simulazione di {salon.name} con il modello {settings.llm_model}. Scrivi 'esci' per uscire.\n")
     while True:

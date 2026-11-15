@@ -7,6 +7,7 @@ CallBot answers a salon's WhatsApp messages in natural Italian. It:
 - books, moves and cancels appointments in the salon's Google Calendar, without double-booking
 - sends a WhatsApp reminder the day before each appointment
 - understands voice messages
+- knows answers to the 150 questions customers ask barbers most often (`faq.yaml`), in Italian and English
 - hands the chat to the owner when it's unsure, and stays quiet while the owner replies
 
 It can't answer normal phone calls. Calls still ring the owner.
@@ -35,6 +36,20 @@ done by normal code (`callbot/booking.py`), so the bot can't invent a free slot.
 | `tests/` | Automatic checks that the booking rules and the bot behave. |
 
 Changing a price, the hours or a holiday? Edit `salon.yaml` and restart the bot. No code.
+
+## The 150 common questions
+
+`faq.yaml` holds the questions customers ask barbers most often, each answered in Italian and English.
+There's no published "top 150" study, so the list was built from real barbershop FAQ pages,
+booking-app guides and customer reviews. When a customer asks something that isn't a booking,
+the bot searches this list (plain word matching, no AI cost) and answers in its own words.
+
+- Prices, hours, address and services are filled in from `salon.yaml` automatically.
+- Answers that depend on the shop (parking, payment, kids, colour...) use the `facts:` section
+  of `salon.yaml`. If a fact is empty, the bot never guesses: it hands the chat to the owner.
+- General advice (face shapes, beard care, how long a fade lasts) is the same for every salon.
+
+To add or change an answer, edit `faq.yaml` and restart the bot.
 
 ## Switching the AI model
 

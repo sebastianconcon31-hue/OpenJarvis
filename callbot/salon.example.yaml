@@ -59,6 +59,56 @@ booking:
   allow_cancel: true        # customers can cancel through the bot
   allow_reschedule: true    # customers can move their appointment through the bot
 
+# Facts used to answer the common questions in faq.yaml. Leave one empty ("")
+# and the bot will NOT guess: it says it'll check and passes the chat to the owner.
+# You can write one text, or separate Italian and English: {it: "...", en: "..."}
+facts:
+  phone: "0444 000000"
+  instagram: ""
+  parking:
+    it: "C'è un parcheggio a pagamento a 2 minuti a piedi, in Piazza Esempio."
+    en: "There's a paid car park 2 minutes' walk away, in Piazza Esempio."
+  public_transport: ""
+  payment_methods:
+    it: "contanti, bancomat, carte di credito e Satispay"
+    en: "cash, debit cards, credit cards and Satispay"
+  walk_ins:
+    it: "Se c'è un buco libero sì, ma per essere sicuri conviene prenotare: lo facciamo subito qui in chat."
+    en: "If there's a free gap, yes, but booking is safer: we can do it right here in the chat."
+  wash_included: ""
+  late_policy:
+    it: "Possiamo aspettare fino a 10 minuti; oltre, potremmo dover accorciare il servizio o spostarlo."
+    en: "We can wait up to 10 minutes; after that we may need to shorten or move the appointment."
+  cancellation_policy:
+    it: "Si può disdire o spostare gratis fino a qualche ora prima: basta scrivere qui."
+    en: "You can cancel or move for free up to a few hours before: just message here."
+  kids:
+    it: "Sì, tagliamo i capelli ai bambini di tutte le età."
+    en: "Yes, we cut children's hair at any age."
+  women_cuts: ""
+  colour: ""
+  perm: ""
+  scalp_treatments: ""
+  eyebrows: ""
+  ear_nose_wax: ""
+  hair_designs: ""
+  curly_afro: ""
+  tidy_up: ""
+  hot_towel_shave: ""
+  home_service: ""
+  discounts: ""
+  loyalty: ""
+  gift_cards: ""
+  products_sold: ""
+  review_link: ""
+  languages_spoken: "italiano, inglese"
+  accessibility: ""
+  toilet: ""
+  wifi: ""
+  drinks: ""
+  pets: ""
+  air_conditioning: ""
+
 # Anything else the bot should know (parking, payment, etc.). Free text.
 extra_info: |
   Si accettano contanti e carte. Parcheggio a pagamento nelle vicinanze.

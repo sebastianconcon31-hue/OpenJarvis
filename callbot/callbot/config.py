@@ -68,6 +68,7 @@ class Salon:
     allow_cancel: bool
     allow_reschedule: bool
     extra_info: str = ""
+    facts: dict = field(default_factory=dict)
 
     def service(self, name: str) -> Service | None:
         wanted = name.strip().lower()
@@ -114,6 +115,7 @@ def load_salon(path: str | Path) -> Salon:
         allow_cancel=bool(booking.get("allow_cancel", True)),
         allow_reschedule=bool(booking.get("allow_reschedule", True)),
         extra_info=data.get("extra_info", "") or "",
+        facts=dict(data.get("facts") or {}),
     )
 
 
@@ -141,12 +143,12 @@ class Settings:
     google_credentials_file: str = ""
     # Behaviour
     salon_file: str = "salon.yaml"
+    faq_file: str = "faq.yaml"
     db_path: str = "data/callbot.db"
     handoff_pause_hours: float = 12
     new_chat_after_hours: float = 24  # show the AI notice again after this much silence
     reminder_hour: int = 18  # send tomorrow's reminders at this hour (shop time)
     history_messages: int = 20
-    extra: dict = field(default_factory=dict)
 
 
 def load_settings() -> Settings:
@@ -176,6 +178,7 @@ def load_settings() -> Settings:
         google_calendar_id=env("GOOGLE_CALENDAR_ID", ""),
         google_credentials_file=env("GOOGLE_CREDENTIALS_FILE", "google-credentials.json"),
         salon_file=env("SALON_FILE", "salon.yaml"),
+        faq_file=env("FAQ_FILE", "faq.yaml"),
         db_path=env("DB_PATH", "data/callbot.db"),
         handoff_pause_hours=float(env("HANDOFF_PAUSE_HOURS", "12")),
         new_chat_after_hours=float(env("NEW_CHAT_AFTER_HOURS", "24")),

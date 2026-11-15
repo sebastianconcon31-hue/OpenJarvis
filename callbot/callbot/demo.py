@@ -32,7 +32,7 @@ def fake_phone(session: str) -> str:
     return "39000" + digits.zfill(7)
 
 
-def make_demo_router(salon, settings, llm, password: str = "") -> APIRouter:
+def make_demo_router(salon, settings, llm, password: str = "", faq=None) -> APIRouter:
     router = APIRouter()
     calendar = LocalCalendar()
     booking = Booking(salon, calendar)
@@ -46,7 +46,7 @@ def make_demo_router(salon, settings, llm, password: str = "") -> APIRouter:
     def notify_owner(phone: str, name: str, reason: str) -> None:
         owner_alerts.append(f"{name or 'Cliente'} (+{phone}): {reason}")
 
-    bot = Receptionist(salon, settings, llm, booking, store, send, notify_owner)
+    bot = Receptionist(salon, settings, llm, booking, store, send, notify_owner, faq)
 
     def allowed(pw: str) -> bool:
         return not password or hmac.compare_digest(pw.encode(), password.encode())

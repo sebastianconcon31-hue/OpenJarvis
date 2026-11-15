@@ -1,0 +1,1714 @@
+# ---------------------------------------------------------------------------
+# The 150 questions customers ask barbers most often, with answers in Italian
+# and English. The bot looks these up with its search_faq tool.
+#
+# How the list was made: there is no published "top 150" study, so the
+# questions were gathered from real barbershop FAQ pages, booking-app guides
+# and customer reviews, then grouped and translated for an Italian salon.
+#
+# Placeholders in {curly braces} are filled in automatically:
+#   {name} {address} {hours} {prices} {services} {barbers} {max_days} {min_notice}
+#   come from salon.yaml. Anything else, like {parking}, comes from the
+#   "facts:" section of salon.yaml. If a fact is empty, the bot does NOT guess:
+#   it says it will check, and passes the chat to the owner.
+# "needs" lists the facts an answer depends on.
+# ---------------------------------------------------------------------------
+
+# ===================== 1. PRENOTAZIONI / BOOKING (25) =====================
+- id: come_prenotare
+  cat: prenotazioni
+  q_it:
+    - "Come posso prenotare?"
+    - "Posso prendere un appuntamento?"
+    - "Si prenota qui su WhatsApp?"
+  q_en:
+    - "How do I book?"
+    - "Can I make an appointment?"
+  a_it: "Può prenotare direttamente qui su WhatsApp: mi dica il servizio e il giorno che preferisce e le propongo gli orari liberi."
+  a_en: "You can book right here on WhatsApp: tell me the service and the day you'd like and I'll suggest the free times."
+
+- id: prenotare_oggi
+  cat: prenotazioni
+  q_it:
+    - "Avete posto oggi?"
+    - "C'è un buco oggi?"
+    - "Posso venire adesso?"
+    - "Siete liberi ora?"
+  q_en:
+    - "Do you have anything today?"
+    - "Can I come now?"
+  a_it: "Controllo subito gli orari liberi di oggi. Serve almeno {min_notice} minuti di preavviso. Che servizio le serve?"
+  a_en: "I'll check today's free times right away. We need at least {min_notice} minutes' notice. Which service do you need?"
+
+- id: prenotare_anticipo
+  cat: prenotazioni
+  q_it:
+    - "Con quanto anticipo posso prenotare?"
+    - "Posso prenotare per il mese prossimo?"
+  q_en:
+    - "How far ahead can I book?"
+  a_it: "Si può prenotare fino a {max_days} giorni in anticipo."
+  a_en: "You can book up to {max_days} days ahead."
+
+- id: senza_appuntamento
+  cat: prenotazioni
+  q_it:
+    - "Posso venire senza appuntamento?"
+    - "Accettate clienti senza prenotazione?"
+    - "Si può passare senza prenotare?"
+  q_en:
+    - "Do you take walk-ins?"
+    - "Can I come without an appointment?"
+  a_it: "{walk_ins}"
+  a_en: "{walk_ins}"
+  needs: [walk_ins]
+
+- id: barbiere_preciso
+  cat: prenotazioni
+  q_it:
+    - "Posso scegliere il barbiere?"
+    - "Vorrei prenotare con un barbiere in particolare"
+    - "Chi c'è a lavorare?"
+  q_en:
+    - "Can I book with a specific barber?"
+    - "Who works there?"
+  a_it: "In salone lavorano: {barbers}. Mi dica con chi preferisce e cerco gli orari liberi."
+  a_en: "Our barbers are: {barbers}. Tell me who you'd like and I'll find the free times."
+
+- id: spostare
+  cat: prenotazioni
+  q_it:
+    - "Posso spostare l'appuntamento?"
+    - "Devo cambiare orario"
+    - "Posso anticipare l'appuntamento?"
+  q_en:
+    - "Can I reschedule?"
+    - "I need to change my appointment"
+  a_it: "Certo, posso spostarlo io. Mi dica il nuovo giorno e l'ora che preferisce."
+  a_en: "Sure, I can move it for you. Tell me the new day and time you'd like."
+
+- id: cancellare
+  cat: prenotazioni
+  q_it:
+    - "Devo disdire"
+    - "Posso cancellare l'appuntamento?"
+    - "Non riesco a venire"
+  q_en:
+    - "I need to cancel"
+    - "I can't make it"
+  a_it: "Nessun problema, posso cancellarlo io. Se vuole, le trovo subito un altro orario."
+  a_en: "No problem, I can cancel it for you. If you like, I can find you another time straight away."
+
+- id: controllare_appuntamento
+  cat: prenotazioni
+  q_it:
+    - "A che ora ho l'appuntamento?"
+    - "Ho una prenotazione?"
+    - "Mi ricordi quando devo venire?"
+  q_en:
+    - "What time is my appointment?"
+    - "Do I have a booking?"
+  a_it: "Controllo subito le sue prenotazioni."
+  a_en: "I'll check your bookings right away."
+
+- id: prenotare_per_altri
+  cat: prenotazioni
+  q_it:
+    - "Posso prenotare per mio figlio?"
+    - "Prenoto per un amico"
+    - "Posso prenotare per un'altra persona?"
+  q_en:
+    - "Can I book for someone else?"
+    - "Can I book for my son?"
+  a_it: "Certo! Mi dica il nome della persona, il servizio e quando preferisce."
+  a_en: "Of course! Tell me the person's name, the service and when you'd like."
+
+- id: prenotare_due
+  cat: prenotazioni
+  q_it:
+    - "Possiamo venire in due?"
+    - "Prenoto per me e mio figlio insieme"
+    - "Si può prenotare per due persone?"
+  q_en:
+    - "Can I book for two people?"
+    - "Can we come together?"
+  a_it: "Sì, faccio due prenotazioni, una dopo l'altra o in parallelo se c'è più di un barbiere libero. Mi dica i nomi e i servizi."
+  a_en: "Yes, I'll make two bookings, back to back, or at the same time if more than one barber is free. Tell me the names and services."
+
+- id: gruppi_eventi
+  cat: prenotazioni
+  q_it:
+    - "Fate pacchetti per matrimoni?"
+    - "Siamo un gruppo per un addio al celibato"
+    - "Venite a domicilio per lo sposo?"
+  q_en:
+    - "Do you do weddings or groups?"
+    - "Bachelor party booking?"
+  a_it: "Per matrimoni e gruppi preferisco farla parlare direttamente con il titolare, così le prepara una proposta su misura."
+  a_en: "For weddings and groups I'll put you in touch with the owner, who'll prepare a tailored offer."
+  handoff: true
+
+- id: lista_attesa
+  cat: prenotazioni
+  q_it:
+    - "Mi avvisate se si libera un posto?"
+    - "C'è una lista d'attesa?"
+  q_en:
+    - "Is there a waiting list?"
+    - "Can you tell me if a slot opens?"
+  a_it: "Al momento non ho una lista d'attesa automatica, ma posso controllare adesso altri giorni o orari vicini. Le va?"
+  a_en: "I don't have an automatic waiting list yet, but I can check other nearby days or times now. Would that help?"
+
+- id: conferma_prenotazione
+  cat: prenotazioni
+  q_it:
+    - "Mi arriva una conferma?"
+    - "Come so che la prenotazione è fatta?"
+  q_en:
+    - "Will I get a confirmation?"
+  a_it: "Quando la prenotazione è fatta glielo confermo qui in chat, e il giorno prima le arriva un promemoria su WhatsApp."
+  a_en: "I confirm the booking here in the chat, and you'll get a WhatsApp reminder the day before."
+
+- id: promemoria
+  cat: prenotazioni
+  q_it:
+    - "Mi mandate un promemoria?"
+    - "Mi ricordate l'appuntamento?"
+  q_en:
+    - "Do you send reminders?"
+  a_it: "Sì, il giorno prima dell'appuntamento le mando un promemoria qui su WhatsApp."
+  a_en: "Yes, the day before your appointment I'll send you a reminder here on WhatsApp."
+
+- id: quanto_dura
+  cat: prenotazioni
+  q_it:
+    - "Quanto dura un taglio?"
+    - "Quanto tempo ci vuole?"
+    - "Quanto ci mettete?"
+  q_en:
+    - "How long does a haircut take?"
+    - "How long will it take?"
+  a_it: "Ecco i tempi indicativi dei servizi: {services}"
+  a_en: "Here are the approximate times: {services}"
+
+- id: prima_volta
+  cat: prenotazioni
+  q_it:
+    - "È la prima volta che vengo"
+    - "Non sono mai venuto, cosa devo sapere?"
+  q_en:
+    - "It's my first time, what should I know?"
+  a_it: "Benvenuto! Basta prenotare il servizio che le interessa; se ha una foto del taglio che desidera, la porti pure. Siamo in {address}."
+  a_en: "Welcome! Just book the service you want; if you have a photo of the cut you'd like, bring it along. We're at {address}."
+
+- id: foto_taglio
+  cat: prenotazioni
+  q_it:
+    - "Posso mandare una foto del taglio che voglio?"
+    - "Posso portare una foto?"
+  q_en:
+    - "Can I send a photo of the style I want?"
+  a_it: "Certo, una foto aiuta molto! La mostri pure al barbiere quando arriva in salone."
+  a_en: "Of course, a photo helps a lot! Just show it to the barber when you arrive."
+
+- id: urgenza_evento
+  cat: prenotazioni
+  q_it:
+    - "Ho un colloquio domani, mi fate un taglio?"
+    - "Ho un evento stasera, c'è posto?"
+  q_en:
+    - "I have an event tomorrow, can you fit me in?"
+  a_it: "Vediamo subito cosa c'è di libero. Per che giorno le serve e quale servizio?"
+  a_en: "Let's see what's free. Which day do you need and which service?"
+
+- id: prenotare_telefono
+  cat: prenotazioni
+  q_it:
+    - "Posso prenotare per telefono?"
+    - "Vi posso chiamare?"
+  q_en:
+    - "Can I book by phone?"
+    - "Can I call you?"
+  a_it: "Il modo più veloce è qui su WhatsApp, rispondo subito. Se preferisce chiamare, il numero è {phone}."
+  a_en: "The quickest way is here on WhatsApp, I reply straight away. If you'd rather call, the number is {phone}."
+  needs: [phone]
+
+- id: prenotare_online
+  cat: prenotazioni
+  q_it:
+    - "Avete un sito per prenotare?"
+    - "C'è un'app per prenotare?"
+  q_en:
+    - "Do you have online booking?"
+    - "Is there an app?"
+  a_it: "Può prenotare direttamente qui su WhatsApp, 24 ore su 24."
+  a_en: "You can book right here on WhatsApp, 24 hours a day."
+
+- id: prenotare_sera
+  cat: prenotazioni
+  q_it:
+    - "Avete orari serali?"
+    - "Posso venire dopo il lavoro?"
+    - "Fino a che ora si può prenotare?"
+  q_en:
+    - "Do you have evening appointments?"
+    - "Can I come after work?"
+  a_it: "Ecco gli orari del salone: {hours}. Le cerco l'ultimo orario libero del giorno che preferisce?"
+  a_en: "Here are our opening hours: {hours}. Shall I look for the latest free slot on the day you want?"
+
+- id: prenotare_weekend
+  cat: prenotazioni
+  q_it:
+    - "Siete aperti il sabato?"
+    - "Lavorate la domenica?"
+    - "Aprite nel weekend?"
+  q_en:
+    - "Are you open on weekends?"
+    - "Open on Saturday?"
+  a_it: "Ecco gli orari della settimana: {hours}"
+  a_en: "Here are our weekly hours: {hours}"
+
+- id: tempo_attesa
+  cat: prenotazioni
+  q_it:
+    - "Quanto devo aspettare?"
+    - "C'è tanta attesa?"
+    - "C'è gente adesso?"
+  q_en:
+    - "How long is the wait?"
+    - "Is it busy now?"
+  a_it: "Con l'appuntamento non si aspetta: le cerco un orario preciso così entra subito."
+  a_en: "With an appointment there's no waiting: I'll find you an exact time so you go straight in."
+
+- id: arrivo_anticipo
+  cat: prenotazioni
+  q_it:
+    - "Devo arrivare prima?"
+    - "Quanto prima devo arrivare?"
+  q_en:
+    - "Should I arrive early?"
+  a_it: "Basta arrivare puntuali, al massimo 5 minuti prima."
+  a_en: "Just be on time, at most 5 minutes early."
+
+- id: prossimo_libero
+  cat: prenotazioni
+  q_it:
+    - "Qual è il primo posto libero?"
+    - "Quando è il prossimo buco?"
+  q_en:
+    - "When is your next free slot?"
+  a_it: "Controllo il primo orario libero. Per quale servizio?"
+  a_en: "I'll check the first free time. Which service?"
+
+# ===================== 2. ORARI, DOVE, CONTATTI / HOURS, LOCATION, CONTACT (12) =====================
+- id: orari
+  cat: info
+  q_it:
+    - "Che orari fate?"
+    - "A che ora aprite?"
+    - "Quando siete aperti?"
+    - "A che ora chiudete?"
+  q_en:
+    - "What are your opening hours?"
+    - "When are you open?"
+    - "What time do you close?"
+  a_it: "Ecco i nostri orari: {hours}"
+  a_en: "Our opening hours: {hours}"
+
+- id: pausa_pranzo
+  cat: info
+  q_it:
+    - "Fate orario continuato?"
+    - "Chiudete a pranzo?"
+  q_en:
+    - "Do you close for lunch?"
+  a_it: "Ecco gli orari, dove ci sono due fasce c'è la pausa pranzo: {hours}"
+  a_en: "Here are our hours; where there are two time ranges, we close for lunch: {hours}"
+
+- id: chiusura_ferie
+  cat: info
+  q_it:
+    - "Siete aperti ad agosto?"
+    - "Quando chiudete per ferie?"
+    - "Siete aperti a Natale?"
+    - "Siete aperti nei festivi?"
+  q_en:
+    - "Are you open on holidays?"
+    - "When do you close for vacation?"
+  a_it: "Le chiusure straordinarie in programma sono: {closed_dates}. Per un giorno preciso posso controllare io."
+  a_en: "Our upcoming closures are: {closed_dates}. I can check any specific day for you."
+
+- id: indirizzo
+  cat: info
+  q_it:
+    - "Dove siete?"
+    - "Qual è l'indirizzo?"
+    - "Dove si trova il salone?"
+  q_en:
+    - "Where are you?"
+    - "What's the address?"
+  a_it: "Siamo in {address}."
+  a_en: "We're at {address}."
+
+- id: come_arrivare
+  cat: info
+  q_it:
+    - "Come ci arrivo?"
+    - "Siete vicino alla stazione?"
+    - "C'è un autobus?"
+  q_en:
+    - "How do I get there?"
+    - "Is there a bus?"
+  a_it: "Siamo in {address}. {public_transport}"
+  a_en: "We're at {address}. {public_transport}"
+  needs: [public_transport]
+
+- id: parcheggio
+  cat: info
+  q_it:
+    - "C'è parcheggio?"
+    - "Dove posso parcheggiare?"
+    - "Si trova posto per la macchina?"
+  q_en:
+    - "Is there parking?"
+    - "Where can I park?"
+  a_it: "{parking}"
+  a_en: "{parking}"
+  needs: [parking]
+
+- id: telefono
+  cat: info
+  q_it:
+    - "Qual è il vostro numero?"
+    - "Posso chiamarvi?"
+    - "Avete un telefono fisso?"
+  q_en:
+    - "What's your phone number?"
+  a_it: "Il numero del salone è {phone}. Ma qui su WhatsApp rispondo subito!"
+  a_en: "The salon's number is {phone}. But here on WhatsApp I reply straight away!"
+  needs: [phone]
+
+- id: social
+  cat: info
+  q_it:
+    - "Avete Instagram?"
+    - "Dove vedo i vostri lavori?"
+    - "Avete una pagina Facebook?"
+  q_en:
+    - "Are you on Instagram?"
+    - "Where can I see your work?"
+  a_it: "Può vedere i nostri lavori qui: {instagram}"
+  a_en: "You can see our work here: {instagram}"
+  needs: [instagram]
+
+- id: chi_risponde
+  cat: info
+  q_it:
+    - "Sei un robot?"
+    - "Sto parlando con una persona?"
+    - "Sei un'intelligenza artificiale?"
+  q_en:
+    - "Are you a bot?"
+    - "Am I talking to a person?"
+  a_it: "Sono l'assistente virtuale (AI) di {name}. Posso darle informazioni e prenotare. Se preferisce una persona, scriva \"operatore\"."
+  a_en: "I'm {name}'s virtual assistant (AI). I can answer questions and book appointments. If you'd rather talk to a person, type \"operatore\"."
+
+- id: lingue
+  cat: info
+  q_it:
+    - "Parlate inglese?"
+    - "Do you speak English?"
+  q_en:
+    - "Do you speak English?"
+    - "Does the barber speak English?"
+  a_it: "Io rispondo anche in inglese. In salone si parla: {languages_spoken}."
+  a_en: "I can reply in English. In the salon we speak: {languages_spoken}."
+  needs: [languages_spoken]
+
+- id: titolare
+  cat: info
+  q_it:
+    - "Posso parlare con il titolare?"
+    - "Voglio parlare con una persona"
+    - "Mi passi qualcuno?"
+  q_en:
+    - "Can I speak to the owner?"
+    - "I want to talk to a person"
+  a_it: "Certo, avviso subito il titolare che le risponderà di persona."
+  a_en: "Of course, I'll let the owner know and they'll reply personally."
+  handoff: true
+
+- id: lavoro
+  cat: info
+  q_it:
+    - "Cercate personale?"
+    - "Posso lasciare il curriculum?"
+    - "Assumete barbieri?"
+  q_en:
+    - "Are you hiring?"
+    - "Can I send my CV?"
+  a_it: "Per le candidature la metto in contatto con il titolare."
+  a_en: "For job applications I'll put you in touch with the owner."
+  handoff: true
+
+# ===================== 3. PREZZI E PAGAMENTI / PRICES & PAYMENT (14) =====================
+- id: prezzi
+  cat: prezzi
+  q_it:
+    - "Quanto costa un taglio?"
+    - "Che prezzi fate?"
+    - "Mi dice il listino?"
+    - "Quanto viene?"
+  q_en:
+    - "How much is a haircut?"
+    - "What are your prices?"
+  a_it: "Ecco il listino: {prices}"
+  a_en: "Here's our price list: {prices}"
+
+- id: prezzo_barba
+  cat: prezzi
+  q_it:
+    - "Quanto costa la barba?"
+    - "Quanto viene sistemare la barba?"
+  q_en:
+    - "How much for a beard trim?"
+  a_it: "Ecco i prezzi, barba compresa: {prices}"
+  a_en: "Here are our prices, beard included: {prices}"
+
+- id: barba_inclusa
+  cat: prezzi
+  q_it:
+    - "La barba è compresa nel taglio?"
+    - "Il taglio include la barba?"
+  q_en:
+    - "Is the beard included with the haircut?"
+  a_it: "Taglio e barba sono servizi separati, ma c'è anche la combinazione. Ecco i prezzi: {prices}"
+  a_en: "Haircut and beard are separate services, but there's also a combo. Prices: {prices}"
+
+- id: shampoo_incluso
+  cat: prezzi
+  q_it:
+    - "Lo shampoo è compreso?"
+    - "Mi lavate i capelli?"
+  q_en:
+    - "Is a wash included?"
+  a_it: "{wash_included}"
+  a_en: "{wash_included}"
+  needs: [wash_included]
+
+- id: pagamento_carta
+  cat: prezzi
+  q_it:
+    - "Accettate carte?"
+    - "Posso pagare con il bancomat?"
+    - "Si può pagare con la carta?"
+    - "Accettate Satispay?"
+  q_en:
+    - "Do you take cards?"
+    - "Can I pay by card?"
+  a_it: "Metodi di pagamento accettati: {payment_methods}."
+  a_en: "Accepted payment methods: {payment_methods}."
+  needs: [payment_methods]
+
+- id: pagamento_contanti
+  cat: prezzi
+  q_it:
+    - "Accettate contanti?"
+    - "Si paga solo in contanti?"
+  q_en:
+    - "Do you take cash?"
+  a_it: "Metodi di pagamento accettati: {payment_methods}."
+  a_en: "Accepted payment methods: {payment_methods}."
+  needs: [payment_methods]
+
+- id: pagare_anticipo
+  cat: prezzi
+  q_it:
+    - "Devo pagare in anticipo?"
+    - "Serve una caparra?"
+  q_en:
+    - "Do I need to pay in advance?"
+    - "Is there a deposit?"
+  a_it: "No, non serve pagare in anticipo: si paga in salone dopo il servizio."
+  a_en: "No, there's no need to pay in advance: you pay in the salon after the service."
+
+- id: sconto_studenti
+  cat: prezzi
+  q_it:
+    - "Fate sconti per studenti?"
+    - "C'è uno sconto per anziani?"
+    - "Avete prezzi ridotti?"
+  q_en:
+    - "Do you have a student discount?"
+    - "Senior discount?"
+  a_it: "{discounts}"
+  a_en: "{discounts}"
+  needs: [discounts]
+
+- id: tessera_fedelta
+  cat: prezzi
+  q_it:
+    - "Avete una tessera fedeltà?"
+    - "C'è una carta punti?"
+    - "Il decimo taglio è gratis?"
+  q_en:
+    - "Do you have a loyalty card?"
+  a_it: "{loyalty}"
+  a_en: "{loyalty}"
+  needs: [loyalty]
+
+- id: prezzo_bambino
+  cat: prezzi
+  q_it:
+    - "Quanto costa il taglio per bambini?"
+    - "I bambini pagano meno?"
+  q_en:
+    - "How much is a kids' cut?"
+  a_it: "Ecco il listino completo: {prices}"
+  a_en: "Here's the full price list: {prices}"
+
+- id: mancia
+  cat: prezzi
+  q_it:
+    - "Si lascia la mancia?"
+    - "Quanto devo lasciare di mancia?"
+  q_en:
+    - "Should I tip?"
+    - "How much do I tip?"
+  a_it: "In Italia la mancia non è obbligatoria: se è soddisfatto, è sempre un gesto apprezzato, ma nessuno se la aspetta."
+  a_en: "In Italy tipping isn't expected: if you're happy it's always appreciated, but nobody expects it."
+
+- id: fattura
+  cat: prezzi
+  q_it:
+    - "Mi fate lo scontrino?"
+    - "Posso avere la fattura?"
+  q_en:
+    - "Can I get a receipt or invoice?"
+  a_it: "Lo scontrino viene sempre rilasciato. Per la fattura lo dica in cassa al momento del pagamento, portando i dati."
+  a_en: "You always get a receipt. If you need an invoice, ask at the till when you pay and bring your details."
+
+- id: prezzo_diverso
+  cat: prezzi
+  q_it:
+    - "Perché il prezzo è diverso?"
+    - "Mi avete fatto pagare di più"
+    - "Il prezzo era sbagliato"
+  q_en:
+    - "Why was I charged more?"
+    - "The price was different"
+  a_it: "Mi dispiace per il dubbio. La metto in contatto con il titolare, che le spiega tutto."
+  a_en: "Sorry about the confusion. I'll put you in touch with the owner, who'll explain."
+  handoff: true
+
+- id: prezzo_capelli_lunghi
+  cat: prezzi
+  q_it:
+    - "Per capelli lunghi costa di più?"
+    - "Il prezzo cambia se ho tanti capelli?"
+  q_en:
+    - "Do long hair cuts cost more?"
+  a_it: "Ecco il listino: {prices}. Per capelli molto lunghi o lavori particolari il barbiere le conferma il prezzo prima di iniziare."
+  a_en: "Here's the price list: {prices}. For very long hair or special work, the barber confirms the price before starting."
+
+# ===================== 4. SERVIZI / SERVICES (20) =====================
+- id: servizi
+  cat: servizi
+  q_it:
+    - "Che servizi fate?"
+    - "Cosa offrite?"
+    - "Che trattamenti avete?"
+  q_en:
+    - "What services do you offer?"
+  a_it: "Ecco i nostri servizi: {services}"
+  a_en: "Here are our services: {services}"
+
+- id: sfumatura
+  cat: servizi
+  q_it:
+    - "Fate la sfumatura?"
+    - "Fate il fade?"
+    - "Sapete fare lo skin fade?"
+    - "Fate la sfumatura alta?"
+  q_en:
+    - "Do you do fades?"
+    - "Can you do a skin fade?"
+  a_it: "Sì, le sfumature (low, mid, high e skin fade) rientrano nel taglio uomo. Ecco i servizi: {services}"
+  a_en: "Yes, fades (low, mid, high and skin fade) are part of the men's cut. Services: {services}"
+
+- id: solo_macchinetta
+  cat: servizi
+  q_it:
+    - "Fate solo macchinetta?"
+    - "Mi rasate a zero?"
+    - "Un taglio tutto a macchinetta quanto costa?"
+  q_en:
+    - "Can I get just a clipper cut?"
+    - "Buzz cut?"
+  a_it: "Certo, si può fare tutto a macchinetta alla lunghezza che vuole. Ecco i prezzi: {prices}"
+  a_en: "Sure, we can do it all with clippers at whatever length you like. Prices: {prices}"
+
+- id: solo_rifinitura
+  cat: servizi
+  q_it:
+    - "Fate solo la rifinitura del collo?"
+    - "Mi sistemate solo le basette?"
+    - "Solo il contorno?"
+  q_en:
+    - "Can I just get a neck or edge tidy-up?"
+  a_it: "{tidy_up}"
+  a_en: "{tidy_up}"
+  needs: [tidy_up]
+
+- id: donna
+  cat: servizi
+  q_it:
+    - "Tagliate anche alle donne?"
+    - "Fate tagli femminili?"
+    - "Taglio capelli lunghi donna?"
+  q_en:
+    - "Do you cut women's hair?"
+    - "Do you do long hair?"
+  a_it: "{women_cuts}"
+  a_en: "{women_cuts}"
+  needs: [women_cuts]
+
+- id: colore
+  cat: servizi
+  q_it:
+    - "Fate il colore?"
+    - "Coprite i capelli bianchi?"
+    - "Fate la tinta per uomo?"
+    - "Fate le meches?"
+  q_en:
+    - "Do you do hair colour?"
+    - "Can you cover grey hair?"
+  a_it: "{colour}"
+  a_en: "{colour}"
+  needs: [colour]
+
+- id: permanente
+  cat: servizi
+  q_it:
+    - "Fate la permanente?"
+    - "Fate i ricci?"
+    - "Fate la stiratura?"
+  q_en:
+    - "Do you do perms?"
+    - "Hair straightening?"
+  a_it: "{perm}"
+  a_en: "{perm}"
+  needs: [perm]
+
+- id: trattamenti
+  cat: servizi
+  q_it:
+    - "Fate trattamenti anticaduta?"
+    - "Avete trattamenti per la forfora?"
+    - "Fate trattamenti al cuoio capelluto?"
+  q_en:
+    - "Do you do scalp or hair-loss treatments?"
+  a_it: "{scalp_treatments}"
+  a_en: "{scalp_treatments}"
+  needs: [scalp_treatments]
+
+- id: sopracciglia
+  cat: servizi
+  q_it:
+    - "Sistemate le sopracciglia?"
+    - "Fate le sopracciglia?"
+  q_en:
+    - "Do you do eyebrows?"
+  a_it: "{eyebrows}"
+  a_en: "{eyebrows}"
+  needs: [eyebrows]
+
+- id: ceretta_orecchie
+  cat: servizi
+  q_it:
+    - "Fate la ceretta a naso e orecchie?"
+    - "Togliete i peli delle orecchie?"
+  q_en:
+    - "Do you do nose and ear waxing?"
+  a_it: "{ear_nose_wax}"
+  a_en: "{ear_nose_wax}"
+  needs: [ear_nose_wax]
+
+- id: disegni
+  cat: servizi
+  q_it:
+    - "Fate i disegni sui capelli?"
+    - "Mi fate una riga col rasoio?"
+    - "Fate gli hair tattoo?"
+  q_en:
+    - "Do you do hair designs or lines?"
+  a_it: "{hair_designs}"
+  a_en: "{hair_designs}"
+  needs: [hair_designs]
+
+- id: ricci_afro
+  cat: servizi
+  q_it:
+    - "Tagliate capelli ricci?"
+    - "Sapete tagliare capelli afro?"
+    - "Fate le treccine?"
+  q_en:
+    - "Do you cut curly or afro hair?"
+    - "Do you do braids?"
+  a_it: "{curly_afro}"
+  a_en: "{curly_afro}"
+  needs: [curly_afro]
+
+- id: lavaggio
+  cat: servizi
+  q_it:
+    - "Devo venire con i capelli lavati?"
+    - "Mi devo lavare i capelli prima?"
+  q_en:
+    - "Should I come with clean hair?"
+  a_it: "Non serve, ma è meglio venire con i capelli puliti e senza troppo prodotto: così il barbiere vede bene come cadono."
+  a_en: "It's not required, but clean hair without much product is best: the barber can see how it falls naturally."
+
+- id: piega_styling
+  cat: servizi
+  q_it:
+    - "Mi fate anche la piega?"
+    - "Mi sistemate i capelli dopo il taglio?"
+    - "Usate il gel?"
+  q_en:
+    - "Do you style it after the cut?"
+  a_it: "Sì, alla fine del taglio il barbiere sistema i capelli con il prodotto adatto e, se vuole, le spiega come rifarlo a casa."
+  a_en: "Yes, after the cut the barber styles your hair with a suitable product and can show you how to do it at home."
+
+- id: domicilio
+  cat: servizi
+  q_it:
+    - "Venite a domicilio?"
+    - "Potete venire a casa?"
+    - "Fate tagli a domicilio per anziani?"
+  q_en:
+    - "Do you do home visits?"
+  a_it: "{home_service}"
+  a_en: "{home_service}"
+  needs: [home_service]
+
+- id: parrucchino
+  cat: servizi
+  q_it:
+    - "Fate protesi capillari?"
+    - "Sistemate il parrucchino?"
+  q_en:
+    - "Do you do hair systems or toupees?"
+  a_it: "Per questo tipo di servizio la metto in contatto con il titolare."
+  a_en: "For this kind of service I'll put you in touch with the owner."
+  handoff: true
+
+- id: taglio_scuola
+  cat: servizi
+  q_it:
+    - "Che taglio mi consigli?"
+    - "Non so che taglio fare"
+    - "Mi consigliate voi?"
+  q_en:
+    - "What cut do you recommend?"
+    - "I don't know what to get"
+  a_it: "Il barbiere la consiglia volentieri in salone, guardando forma del viso e tipo di capelli. Porti pure qualche foto che le piace come spunto."
+  a_en: "The barber will happily advise you in person, looking at your face shape and hair type. Feel free to bring photos you like."
+
+- id: cambio_look
+  cat: servizi
+  q_it:
+    - "Voglio cambiare completamente look"
+    - "Voglio tagliare molto corto"
+    - "Voglio un taglio drastico"
+  q_en:
+    - "I want a complete change"
+    - "I want to go really short"
+  a_it: "Ottima idea! Le consiglio di prenotare con un po' di margine e di portare qualche foto: il barbiere ne parla con lei prima di iniziare."
+  a_en: "Great idea! Book a bit of extra time and bring some photos: the barber will talk it through with you before starting."
+
+- id: taglio_classico
+  cat: servizi
+  q_it:
+    - "Fate tagli classici?"
+    - "Fate la riga di lato?"
+    - "Fate il pompadour?"
+  q_en:
+    - "Do you do classic cuts?"
+    - "Side part, pompadour?"
+  a_it: "Sì, facciamo sia tagli classici (riga di lato, pompadour, taglio a forbice) sia moderni. Ecco i servizi: {services}"
+  a_en: "Yes, we do both classic cuts (side part, pompadour, scissor cut) and modern ones. Services: {services}"
+
+- id: tagli_moderni
+  cat: servizi
+  q_it:
+    - "Fate il crop?"
+    - "Fate il mullet?"
+    - "Fate il taglio alla moda?"
+    - "Fate il french crop?"
+  q_en:
+    - "Do you do crops or mullets?"
+    - "Trendy cuts?"
+  a_it: "Sì, facciamo anche i tagli di tendenza come crop, mullet e textured. Porti una foto per essere sicuri del risultato."
+  a_en: "Yes, we do trendy cuts like crops, mullets and textured styles. Bring a photo to be sure of the result."
+
+# ===================== 5. BARBA E RASATURA / BEARD & SHAVE (12) =====================
+- id: rasatura_tradizionale
+  cat: barba
+  q_it:
+    - "Fate la rasatura con il rasoio?"
+    - "Fate la barba tradizionale con panno caldo?"
+    - "Fate la rasatura a mano libera?"
+  q_en:
+    - "Do you do traditional straight-razor shaves?"
+    - "Hot towel shave?"
+  a_it: "{hot_towel_shave}"
+  a_en: "{hot_towel_shave}"
+  needs: [hot_towel_shave]
+
+- id: regolare_barba
+  cat: barba
+  q_it:
+    - "Mi regolate la barba?"
+    - "Mi date una sistemata alla barba?"
+    - "Fate il contorno della barba?"
+  q_en:
+    - "Can you trim my beard?"
+    - "Beard shape-up?"
+  a_it: "Certo! Ecco i servizi barba e i prezzi: {prices}"
+  a_en: "Of course! Beard services and prices: {prices}"
+
+- id: solo_barba
+  cat: barba
+  q_it:
+    - "Posso fare solo la barba?"
+    - "Prenoto solo la barba senza taglio?"
+  q_en:
+    - "Can I get just a beard trim, no haircut?"
+  a_it: "Sì, la barba si può prenotare anche da sola. Ecco i prezzi: {prices}"
+  a_en: "Yes, you can book a beard service on its own. Prices: {prices}"
+
+- id: forma_barba
+  cat: barba
+  q_it:
+    - "Che forma di barba mi sta bene?"
+    - "Mi consigliate una barba?"
+  q_en:
+    - "What beard shape suits me?"
+  a_it: "In generale: con il viso tondo stanno bene barbe più lunghe sul mento e corte ai lati; con il viso lungo meglio ai lati e più corta sotto. Il barbiere la consiglia di persona."
+  a_en: "Generally: round faces suit beards longer on the chin and shorter on the sides; long faces suit fuller sides and a shorter chin. The barber will advise in person."
+
+- id: crescita_barba
+  cat: barba
+  q_it:
+    - "Quanto tempo devo far crescere la barba prima di venire?"
+    - "La barba non cresce uniforme"
+  q_en:
+    - "How long should I grow my beard before a shape-up?"
+    - "My beard grows patchy"
+  a_it: "Di solito conviene aspettare 3-4 settimane di crescita prima di darle una forma: anche le zone più rade spesso si riempiono. Poi il barbiere la sistema."
+  a_en: "It's usually worth waiting 3-4 weeks of growth before shaping: patchy areas often fill in. Then the barber can shape it."
+
+- id: cura_barba
+  cat: barba
+  q_it:
+    - "Come curo la barba?"
+    - "Che olio da barba uso?"
+    - "La barba mi prude"
+  q_en:
+    - "How do I look after my beard?"
+    - "My beard itches"
+  a_it: "Lavi la barba con un detergente delicato 2-3 volte a settimana, poi qualche goccia di olio o balsamo per ammorbidirla e calmare il prurito, e la pettini ogni giorno."
+  a_en: "Wash your beard with a gentle cleanser 2-3 times a week, then use a few drops of oil or balm to soften it and calm the itch, and comb it daily."
+
+- id: frequenza_barba
+  cat: barba
+  q_it:
+    - "Ogni quanto devo sistemare la barba?"
+    - "Ogni quanto si regola la barba?"
+  q_en:
+    - "How often should I get my beard trimmed?"
+  a_it: "Per una barba curata, di solito ogni 2-3 settimane; per una barba corta anche ogni settimana."
+  a_en: "For a neat beard, usually every 2-3 weeks; a short beard may need it weekly."
+
+- id: pelle_sensibile
+  cat: barba
+  q_it:
+    - "Ho la pelle sensibile, mi irrito con la rasatura"
+    - "Ho i peli incarniti"
+  q_en:
+    - "I have sensitive skin"
+    - "I get razor bumps"
+  a_it: "Lo dica al barbiere all'inizio: può usare prodotti delicati e radere nel verso del pelo per ridurre irritazioni e peli incarniti."
+  a_en: "Tell the barber at the start: they can use gentle products and shave with the grain to reduce irritation and ingrown hairs."
+
+- id: barba_colore
+  cat: barba
+  q_it:
+    - "Mi colorate la barba?"
+    - "Coprite il bianco della barba?"
+  q_en:
+    - "Can you colour my beard?"
+  a_it: "{colour}"
+  a_en: "{colour}"
+  needs: [colour]
+
+- id: baffi
+  cat: barba
+  q_it:
+    - "Sistemate i baffi?"
+    - "Fate i baffi a manubrio?"
+  q_en:
+    - "Do you trim moustaches?"
+  a_it: "Sì, i baffi si sistemano insieme al servizio barba. Ecco i prezzi: {prices}"
+  a_en: "Yes, moustaches are done as part of the beard service. Prices: {prices}"
+
+- id: radere_tutto
+  cat: barba
+  q_it:
+    - "Voglio togliere tutta la barba"
+    - "Mi radete completamente?"
+  q_en:
+    - "I want my beard fully shaved off"
+  a_it: "Certo, si può fare. Se la barba è lunga, il barbiere la accorcia prima a macchinetta e poi rade. Ecco i prezzi: {prices}"
+  a_en: "Sure. If it's long, the barber will clipper it down first and then shave. Prices: {prices}"
+
+- id: barba_sposo
+  cat: barba
+  q_it:
+    - "Mi sposo, mi sistemate barba e capelli?"
+    - "Servizio sposo"
+  q_en:
+    - "I'm getting married, groom package?"
+  a_it: "Congratulazioni! Per lo sposo la metto in contatto con il titolare, così organizzate tutto con calma, anche una prova prima."
+  a_en: "Congratulations! For grooms I'll put you in touch with the owner so you can plan everything calmly, including a trial."
+  handoff: true
+
+# ===================== 6. BAMBINI E FAMIGLIE / KIDS & FAMILY (8) =====================
+- id: bambini
+  cat: bambini
+  q_it:
+    - "Tagliate i capelli ai bambini?"
+    - "Fate il taglio ai bimbi?"
+    - "Fate tagli per bambini?"
+    - "Da che età tagliate?"
+  q_en:
+    - "Do you cut kids' hair?"
+    - "From what age?"
+  a_it: "{kids}"
+  a_en: "{kids}"
+  needs: [kids]
+
+- id: primo_taglio
+  cat: bambini
+  q_it:
+    - "È il primo taglio di mio figlio"
+    - "Primo taglio per un bimbo piccolo"
+  q_en:
+    - "It's my child's first haircut"
+  a_it: "Che bel momento! Le consiglio un orario tranquillo, a metà mattina, quando i bimbi sono più rilassati. {kids}"
+  a_en: "What a lovely moment! I suggest a quiet time, mid-morning, when little ones are calmer. {kids}"
+  needs: [kids]
+
+- id: bambino_agitato
+  cat: bambini
+  q_it:
+    - "Mio figlio non sta fermo"
+    - "Il bimbo ha paura del barbiere"
+  q_en:
+    - "My kid won't sit still"
+    - "My child is scared"
+  a_it: "Succede spesso! Il barbiere ha pazienza; può aiutare portare un giochino o un tablet, e lei può stargli vicino."
+  a_en: "That's common! The barber is patient; a toy or tablet can help, and you can stay close by."
+
+- id: genitore_presente
+  cat: bambini
+  q_it:
+    - "Posso stare con mio figlio durante il taglio?"
+    - "Devo accompagnare il bambino?"
+  q_en:
+    - "Can I stay with my child?"
+  a_it: "Certo, i genitori possono restare vicino al bambino durante il taglio."
+  a_en: "Of course, parents can stay with their child during the cut."
+
+- id: ragazzi_soli
+  cat: bambini
+  q_it:
+    - "Mio figlio di 14 anni può venire da solo?"
+    - "Un ragazzino può venire senza genitori?"
+  q_en:
+    - "Can a teenager come alone?"
+  a_it: "Sì, i ragazzi possono venire da soli; prenoti pure a suo nome."
+  a_en: "Yes, teenagers can come on their own; just book under their name."
+
+- id: accompagnatori
+  cat: bambini
+  q_it:
+    - "Posso portare un amico?"
+    - "Possono aspettarmi in salone?"
+  q_en:
+    - "Can I bring a friend?"
+    - "Can someone wait for me?"
+  a_it: "Certo, chi la accompagna può aspettare in salone."
+  a_en: "Of course, whoever is with you can wait in the salon."
+
+- id: animali
+  cat: bambini
+  q_it:
+    - "Posso portare il cane?"
+    - "Sono ammessi animali?"
+  q_en:
+    - "Can I bring my dog?"
+  a_it: "{pets}"
+  a_en: "{pets}"
+  needs: [pets]
+
+- id: passeggino
+  cat: bambini
+  q_it:
+    - "Si entra con il passeggino?"
+    - "C'è spazio per il passeggino?"
+  q_en:
+    - "Can I bring a stroller?"
+  a_it: "{accessibility}"
+  a_en: "{accessibility}"
+  needs: [accessibility]
+
+# ===================== 7. CONSIGLI SUI CAPELLI / HAIR ADVICE (30) =====================
+- id: ogni_quanto_taglio
+  cat: consigli
+  q_it:
+    - "Ogni quanto devo tagliare i capelli?"
+    - "Ogni quanto si fa il taglio?"
+    - "Quanto spesso devo venire?"
+  q_en:
+    - "How often should I get a haircut?"
+  a_it: "Per tagli corti e sfumature, ogni 2-4 settimane; per tagli medi ogni 4-6 settimane; per capelli lunghi ogni 6-10 settimane."
+  a_en: "For short cuts and fades, every 2-4 weeks; medium cuts every 4-6 weeks; long hair every 6-10 weeks."
+
+- id: durata_sfumatura
+  cat: consigli
+  q_it:
+    - "Quanto dura una sfumatura?"
+    - "Dopo quanto si rovina il fade?"
+  q_en:
+    - "How long does a fade last?"
+  a_it: "Una sfumatura resta bella circa 1-2 settimane; dopo 3 settimane di solito ha bisogno di una ripassata."
+  a_en: "A fade looks sharp for about 1-2 weeks; after around 3 weeks it usually needs a touch-up."
+
+- id: viso_tondo
+  cat: consigli
+  q_it:
+    - "Che taglio sta bene con il viso tondo?"
+    - "Ho il viso rotondo"
+  q_en:
+    - "What cut suits a round face?"
+  a_it: "Con il viso tondo stanno bene i tagli con volume in alto e lati corti (sfumatura, quiff, pompadour): allungano il viso."
+  a_en: "Round faces suit volume on top with short sides (fade, quiff, pompadour): they make the face look longer."
+
+- id: viso_lungo
+  cat: consigli
+  q_it:
+    - "Che taglio per viso lungo?"
+    - "Ho la faccia allungata"
+  q_en:
+    - "What cut suits a long face?"
+  a_it: "Con il viso lungo meglio evitare troppo volume in alto: stanno bene frangia, crop o lati non troppo corti."
+  a_en: "With a long face, avoid too much height on top: fringes, crops or sides that aren't too short work well."
+
+- id: viso_quadrato
+  cat: consigli
+  q_it:
+    - "Che taglio per viso quadrato?"
+    - "Ho la mascella larga"
+  q_en:
+    - "What suits a square face?"
+  a_it: "Il viso quadrato sta bene con quasi tutto: tagli corti classici, crew cut o undercut valorizzano la mascella."
+  a_en: "A square face suits almost anything: classic short cuts, crew cuts or undercuts show off the jawline."
+
+- id: viso_ovale
+  cat: consigli
+  q_it:
+    - "Che taglio per viso ovale?"
+  q_en:
+    - "What suits an oval face?"
+  a_it: "Il viso ovale è il più versatile: può provare quasi ogni taglio, dal corto al medio-lungo."
+  a_en: "An oval face is the most versatile: you can try almost any cut, from short to medium-long."
+
+- id: capelli_fini
+  cat: consigli
+  q_it:
+    - "Ho i capelli fini, che taglio faccio?"
+    - "Come do volume ai capelli sottili?"
+  q_en:
+    - "I have fine hair, what cut?"
+    - "How to add volume?"
+  a_it: "Per capelli fini funzionano tagli corti e scalati, con un po' di texture in alto e un prodotto opaco (polvere o argilla) per dare volume."
+  a_en: "Fine hair works well with short, textured cuts and a matte product (powder or clay) for volume."
+
+- id: capelli_spessi
+  cat: consigli
+  q_it:
+    - "Ho i capelli grossi e tanti"
+    - "Ho troppi capelli, come li sfoltisco?"
+  q_en:
+    - "I have thick hair, can you thin it?"
+  a_it: "Con capelli spessi il barbiere può sfoltire e scalare per togliere peso; una sfumatura ai lati aiuta molto."
+  a_en: "With thick hair the barber can thin and layer to remove bulk; faded sides help a lot."
+
+- id: diradamento
+  cat: consigli
+  q_it:
+    - "Sto perdendo i capelli, che taglio faccio?"
+    - "Ho la stempiatura"
+    - "Ho un diradamento"
+  q_en:
+    - "I'm losing my hair, what cut?"
+    - "Receding hairline"
+  a_it: "Con stempiatura o diradamento di solito stanno meglio tagli corti e ordinati (crop, buzz cut, sfumatura): rendono meno visibili le zone più rade. Per la caduta, meglio sentire un dermatologo."
+  a_en: "With a receding or thinning hairline, short neat cuts (crop, buzz cut, fade) usually look best and make thin areas less visible. For hair loss itself, see a dermatologist."
+
+- id: capelli_bianchi
+  cat: consigli
+  q_it:
+    - "Ho i capelli bianchi, li copro?"
+    - "Capelli grigi, che faccio?"
+  q_en:
+    - "Should I cover my grey hair?"
+  a_it: "Il grigio curato oggi va molto: un taglio ordinato lo valorizza. Se preferisce coprirlo: {colour}"
+  a_en: "Well-kept grey looks great today: a neat cut shows it off. If you'd rather cover it: {colour}"
+  needs: [colour]
+
+- id: forfora
+  cat: consigli
+  q_it:
+    - "Ho la forfora, cosa faccio?"
+    - "Mi prude la testa"
+  q_en:
+    - "I have dandruff, what should I do?"
+  a_it: "Uno shampoo antiforfora usato 2-3 volte a settimana di solito aiuta. Se dura o la pelle è arrossata, meglio sentire un dermatologo."
+  a_en: "An anti-dandruff shampoo 2-3 times a week usually helps. If it persists or the scalp is red, see a dermatologist."
+
+- id: lavare_capelli
+  cat: consigli
+  q_it:
+    - "Ogni quanto devo lavare i capelli?"
+    - "Lavo i capelli tutti i giorni, va bene?"
+  q_en:
+    - "How often should I wash my hair?"
+  a_it: "Per la maggior parte delle persone, 2-4 volte a settimana va bene. Se li lava ogni giorno, scelga uno shampoo delicato."
+  a_en: "For most people 2-4 times a week is fine. If you wash daily, choose a gentle shampoo."
+
+- id: prodotto_styling
+  cat: consigli
+  q_it:
+    - "Che prodotto devo usare?"
+    - "Meglio cera, gel o pomata?"
+    - "Che cosa mi metto sui capelli?"
+  q_en:
+    - "What product should I use?"
+    - "Wax, gel or pomade?"
+  a_it: "Per un effetto naturale e opaco: argilla o pasta. Per un effetto lucido e ordinato: pomata. Per tenuta forte: gel. Il barbiere le consiglia quello giusto per il suo taglio."
+  a_en: "For a natural matte look: clay or paste. For a slick, shiny look: pomade. For strong hold: gel. The barber will recommend the right one for your cut."
+
+- id: far_crescere
+  cat: consigli
+  q_it:
+    - "Voglio far crescere i capelli, devo tagliarli?"
+    - "Come faccio crescere i capelli lunghi?"
+  q_en:
+    - "I'm growing my hair out, should I still get cuts?"
+  a_it: "Sì, anche mentre crescono conviene una spuntatina ogni 6-8 settimane: tiene la forma ordinata nelle fasi intermedie."
+  a_en: "Yes, even while growing it out, a light trim every 6-8 weeks keeps the shape tidy through the awkward stages."
+
+- id: ricci_cura
+  cat: consigli
+  q_it:
+    - "Come gestisco i capelli ricci?"
+    - "I miei ricci sono crespi"
+  q_en:
+    - "How do I manage curly hair?"
+    - "My curls are frizzy"
+  a_it: "Per i ricci: shampoo delicato, sempre il balsamo, asciugare tamponando senza strofinare, e una crema per ricci per tenere a bada il crespo."
+  a_en: "For curls: gentle shampoo, always conditioner, pat dry without rubbing, and a curl cream to control frizz."
+
+- id: cowlick
+  cat: consigli
+  q_it:
+    - "Ho un ciuffo ribelle"
+    - "Ho una rosa sulla nuca, i capelli stanno su"
+  q_en:
+    - "I have a cowlick"
+  a_it: "Lo segnali al barbiere: tagliando nella direzione giusta e lasciando la lunghezza adatta, il ciuffo ribelle si gestisce molto meglio."
+  a_en: "Point it out to the barber: cutting with the right direction and length makes a cowlick much easier to manage."
+
+- id: asciugare
+  cat: consigli
+  q_it:
+    - "Devo usare il phon?"
+    - "Come asciugo i capelli corti?"
+  q_en:
+    - "Should I blow-dry my hair?"
+  a_it: "Il phon a temperatura media aiuta a dare forma e volume; diriga l'aria nella direzione in cui vuole pettinarli."
+  a_en: "A blow-dryer on medium heat helps with shape and volume; point the air in the direction you want to style."
+
+- id: estate_corto
+  cat: consigli
+  q_it:
+    - "In estate meglio corto?"
+    - "Che taglio per l'estate?"
+  q_en:
+    - "Should I go shorter for summer?"
+  a_it: "In estate molti scelgono lati più corti o una sfumatura: è più fresco e pratico, anche dopo il mare o la piscina."
+  a_en: "In summer many people go for shorter sides or a fade: cooler and practical, even after the beach or pool."
+
+- id: capelli_grassi
+  cat: consigli
+  q_it:
+    - "Ho i capelli grassi"
+    - "Mi si sporcano subito i capelli"
+  q_en:
+    - "My hair gets greasy quickly"
+  a_it: "Usi uno shampoo per capelli grassi, eviti acqua troppo calda e prodotti molto lucidi; un prodotto opaco aiuta."
+  a_en: "Use a shampoo for oily hair, avoid very hot water and shiny products; a matte product helps."
+
+- id: capelli_secchi
+  cat: consigli
+  q_it:
+    - "Ho i capelli secchi e sfibrati"
+    - "Ho le doppie punte"
+  q_en:
+    - "My hair is dry, split ends"
+  a_it: "Per capelli secchi: balsamo sempre, meno phon caldo e una spuntatina regolare per eliminare le doppie punte."
+  a_en: "For dry hair: always use conditioner, less hot blow-drying, and regular trims to remove split ends."
+
+- id: taglio_mantenimento
+  cat: consigli
+  q_it:
+    - "Qual è un taglio che non devo pettinare?"
+    - "Voglio un taglio comodo"
+  q_en:
+    - "What's a low-maintenance cut?"
+  a_it: "Per non pensarci troppo: buzz cut, crew cut o crop corto. Si asciugano in fretta e stanno bene senza prodotto."
+  a_en: "For low maintenance: buzz cut, crew cut or short crop. They dry quickly and look good without product."
+
+- id: taglio_lavoro
+  cat: consigli
+  q_it:
+    - "Che taglio per un colloquio?"
+    - "Voglio un taglio elegante per il lavoro"
+  q_en:
+    - "What cut for a job interview?"
+    - "A professional cut?"
+  a_it: "Per un look professionale va benissimo un taglio classico ordinato, con lati corti o una sfumatura leggera e la riga di lato."
+  a_en: "For a professional look, a neat classic cut works perfectly: short sides or a light fade with a side part."
+
+- id: numeri_macchinetta
+  cat: consigli
+  q_it:
+    - "Che numero di macchinetta mi faccio?"
+    - "Cosa vuol dire numero 2?"
+    - "Quanto è corto lo zero?"
+  q_en:
+    - "What clipper guard number should I get?"
+  a_it: "Indicativamente: lo 0 è quasi rasato (circa 0,5-1 mm), l'1 è 3 mm, il 2 è 6 mm, il 3 è 9 mm, il 4 è 12 mm. Il barbiere le mostra la differenza."
+  a_en: "Roughly: 0 is almost shaved (about 0.5-1 mm), 1 is 3 mm, 2 is 6 mm, 3 is 9 mm, 4 is 12 mm. The barber can show you."
+
+- id: differenza_fade
+  cat: consigli
+  q_it:
+    - "Che differenza c'è tra low fade e high fade?"
+    - "Cos'è il taper?"
+  q_en:
+    - "What's the difference between low and high fade?"
+    - "What's a taper?"
+  a_it: "Il low fade parte basso, sopra le orecchie; il mid a metà; l'high in alto, vicino alle tempie. Il taper sfuma solo basette e nuca, più discreto."
+  a_en: "A low fade starts just above the ears, a mid fade halfway up, a high fade near the temples. A taper only fades the sideburns and neckline, more subtle."
+
+- id: taglio_rovinato
+  cat: consigli
+  q_it:
+    - "Un altro barbiere mi ha rovinato il taglio, potete sistemarlo?"
+    - "Mi sono tagliato da solo e ho fatto un disastro"
+  q_en:
+    - "Can you fix a bad haircut?"
+  a_it: "Di solito sì, si può sistemare! Prenoti un taglio e il barbiere vede cosa si può fare con la lunghezza rimasta."
+  a_en: "Usually yes, it can be fixed! Book a cut and the barber will see what can be done with the length left."
+
+- id: tagliarsi_da_solo
+  cat: consigli
+  q_it:
+    - "Posso sistemarmi il collo da solo tra un taglio e l'altro?"
+  q_en:
+    - "Can I tidy my neckline myself between cuts?"
+  a_it: "Sì, con un regolabarba si può ripulire la nuca sotto la linea esistente; meglio non risalire, per non alzare la sfumatura."
+  a_en: "Yes, with a trimmer you can tidy below the existing neckline; just don't go higher, or you'll raise the fade."
+
+- id: sole_mare
+  cat: consigli
+  q_it:
+    - "Il sole rovina i capelli?"
+    - "Come proteggo i capelli al mare?"
+  q_en:
+    - "Does the sun damage hair?"
+  a_it: "Sole, sale e cloro seccano i capelli: un risciacquo con acqua dolce dopo il bagno e un balsamo aiutano molto."
+  a_en: "Sun, salt and chlorine dry hair out: rinsing with fresh water after swimming and using conditioner helps a lot."
+
+- id: capelli_bagnati
+  cat: consigli
+  q_it:
+    - "Tagliate a capelli bagnati o asciutti?"
+  q_en:
+    - "Do you cut hair wet or dry?"
+  a_it: "Dipende dal taglio: le sfumature spesso si fanno a capelli asciutti, i tagli a forbice spesso a capelli umidi. Decide il barbiere in base al risultato."
+  a_en: "It depends on the cut: fades are often done dry, scissor cuts often damp. The barber chooses based on the result."
+
+- id: taglio_tendenza
+  cat: consigli
+  q_it:
+    - "Qual è il taglio di moda adesso?"
+    - "Che tagli vanno quest'anno?"
+  q_en:
+    - "What's the trendy cut right now?"
+  a_it: "Vanno molto il textured crop, le sfumature basse, il mullet moderno e i tagli medi con movimento naturale. Il barbiere le dice quale sta meglio a lei."
+  a_en: "Popular right now: textured crops, low fades, the modern mullet and medium cuts with natural movement. The barber will tell you which suits you."
+
+- id: crescita_capelli
+  cat: consigli
+  q_it:
+    - "Quanto crescono i capelli in un mese?"
+    - "Fra quanto ricrescono?"
+    - "Ho tagliato troppo corto, quando ricrescono?"
+  q_en:
+    - "How fast does hair grow?"
+    - "How long until it grows back?"
+  a_it: "I capelli crescono in media circa 1-1,5 cm al mese: un taglio troppo corto di solito torna a posto in 2-4 settimane."
+  a_en: "Hair grows on average about 1-1.5 cm a month: a cut that's too short usually looks normal again in 2-4 weeks."
+
+# ===================== 8. REGOLE / POLICIES (12) =====================
+- id: ritardo
+  cat: regole
+  q_it:
+    - "Sono in ritardo"
+    - "Arrivo con 10 minuti di ritardo"
+    - "Faccio tardi, va bene lo stesso?"
+  q_en:
+    - "I'm running late"
+    - "Is it OK if I'm late?"
+  a_it: "Grazie per avvisare! {late_policy}"
+  a_en: "Thanks for letting us know! {late_policy}"
+  needs: [late_policy]
+
+- id: politica_cancellazione
+  cat: regole
+  q_it:
+    - "Entro quando posso disdire?"
+    - "Se disdico all'ultimo pago qualcosa?"
+  q_en:
+    - "What's your cancellation policy?"
+  a_it: "{cancellation_policy}"
+  a_en: "{cancellation_policy}"
+  needs: [cancellation_policy]
+
+- id: non_presentato
+  cat: regole
+  q_it:
+    - "Ho saltato l'appuntamento"
+    - "Mi sono dimenticato di venire"
+  q_en:
+    - "I missed my appointment"
+  a_it: "Capita! Le trovo subito un nuovo orario? La prossima volta, se non riesce a venire, basta scrivermi qui."
+  a_en: "It happens! Shall I find you a new time? Next time, if you can't make it, just message me here."
+
+- id: non_soddisfatto
+  cat: regole
+  q_it:
+    - "Il taglio non mi piace"
+    - "Non sono soddisfatto"
+    - "Potete ritoccarmi il taglio?"
+  q_en:
+    - "I don't like my haircut"
+    - "Can you fix it?"
+  a_it: "Mi dispiace! La metto subito in contatto con il titolare, che troverà una soluzione."
+  a_en: "I'm sorry! I'll put you in touch with the owner straight away to sort it out."
+  handoff: true
+
+- id: reclamo
+  cat: regole
+  q_it:
+    - "Voglio fare un reclamo"
+    - "Sono stato trattato male"
+  q_en:
+    - "I want to make a complaint"
+  a_it: "Mi dispiace molto. Avviso subito il titolare, che le risponderà di persona."
+  a_en: "I'm very sorry. I'll let the owner know right away and they'll reply personally."
+  handoff: true
+
+- id: oggetto_dimenticato
+  cat: regole
+  q_it:
+    - "Ho dimenticato qualcosa in salone"
+    - "Avete trovato le mie chiavi?"
+    - "Ho lasciato gli occhiali"
+  q_en:
+    - "I left something at the salon"
+  a_it: "Avviso subito il titolare perché controlli in salone."
+  a_en: "I'll let the owner know so they can check the salon."
+  handoff: true
+
+- id: privacy
+  cat: regole
+  q_it:
+    - "Che dati salvate?"
+    - "Cancellate il mio numero"
+    - "Non voglio essere contattato"
+  q_en:
+    - "What data do you keep?"
+    - "Delete my data"
+  a_it: "Usiamo il suo numero solo per gli appuntamenti e i promemoria. Se vuole che cancelliamo i suoi dati, avviso il titolare che se ne occupa."
+  a_en: "We only use your number for appointments and reminders. If you want your data deleted, I'll ask the owner to take care of it."
+  handoff: true
+
+- id: foto_social
+  cat: regole
+  q_it:
+    - "Mi fate una foto per Instagram?"
+    - "Posso fare foto in salone?"
+  q_en:
+    - "Can you post my cut on Instagram?"
+    - "Can I take photos?"
+  a_it: "Le foto si fanno solo con il suo permesso: se le fa piacere, lo dica pure al barbiere."
+  a_en: "Photos are only taken with your permission: if you'd like one, just tell the barber."
+
+- id: annullamento_salone
+  cat: regole
+  q_it:
+    - "E se il barbiere è malato?"
+    - "Mi avvisate se annullate voi?"
+  q_en:
+    - "What if the barber cancels?"
+  a_it: "Se per qualsiasi motivo dovessimo spostare il suo appuntamento, la avvisiamo qui su WhatsApp il prima possibile."
+  a_en: "If we ever need to move your appointment, we'll let you know here on WhatsApp as soon as possible."
+
+- id: maleducazione
+  cat: regole
+  q_it:
+    - "Siete aperti a tutti?"
+    - "Accogliete tutti?"
+  q_en:
+    - "Is everyone welcome?"
+  a_it: "Certo, da noi sono tutti i benvenuti."
+  a_en: "Of course, everyone is welcome here."
+
+- id: covid_malato
+  cat: regole
+  q_it:
+    - "Ho la febbre, posso venire?"
+    - "Sono raffreddato, devo disdire?"
+  q_en:
+    - "I'm sick, should I still come?"
+  a_it: "Se non sta bene, meglio riposarsi: le sposto volentieri l'appuntamento a un altro giorno."
+  a_en: "If you're unwell, better rest: I'll happily move your appointment to another day."
+
+- id: puntualita_salone
+  cat: regole
+  q_it:
+    - "Siete puntuali?"
+    - "Rispettate gli orari degli appuntamenti?"
+  q_en:
+    - "Do you run on time?"
+  a_it: "Cerchiamo sempre di rispettare gli orari: per questo lavoriamo su appuntamento."
+  a_en: "We always try to stay on schedule: that's why we work by appointment."
+
+# ===================== 9. IGIENE, SALUTE, ACCESSIBILITÀ / HYGIENE, HEALTH, ACCESS (8) =====================
+- id: igiene
+  cat: igiene
+  q_it:
+    - "Sterilizzate gli attrezzi?"
+    - "Le lame sono monouso?"
+    - "È tutto pulito?"
+  q_en:
+    - "Do you sterilise your tools?"
+    - "Are blades single-use?"
+  a_it: "Sì, gli attrezzi vengono puliti e disinfettati dopo ogni cliente, e le lamette dei rasoi sono monouso."
+  a_en: "Yes, tools are cleaned and disinfected after every client, and razor blades are single-use."
+
+- id: allergie
+  cat: igiene
+  q_it:
+    - "Sono allergico ad alcuni prodotti"
+    - "Avete prodotti per pelli sensibili?"
+  q_en:
+    - "I'm allergic to some products"
+  a_it: "Lo dica al barbiere prima di iniziare: eviterà i prodotti a cui è sensibile. Se ha allergie serie, porti pure il nome del prodotto da evitare."
+  a_en: "Tell the barber before starting and they'll avoid those products. If it's serious, bring the name of the product to avoid."
+
+- id: problemi_pelle
+  cat: igiene
+  q_it:
+    - "Ho una ferita in testa, posso tagliare?"
+    - "Ho la psoriasi sulla testa"
+  q_en:
+    - "I have a scalp condition, can I still get a cut?"
+  a_it: "Di solito sì, ma lo segnali al barbiere prima di iniziare così fa attenzione. Per problemi della pelle, il parere giusto è quello del medico."
+  a_en: "Usually yes, but tell the barber beforehand so they can be careful. For skin conditions, a doctor's advice is best."
+
+- id: accessibilita
+  cat: igiene
+  q_it:
+    - "Il salone è accessibile in carrozzina?"
+    - "Ci sono gradini?"
+    - "C'è una rampa?"
+  q_en:
+    - "Is the salon wheelchair accessible?"
+  a_it: "{accessibility}"
+  a_en: "{accessibility}"
+  needs: [accessibility]
+
+- id: bagno
+  cat: igiene
+  q_it:
+    - "Avete un bagno?"
+    - "C'è la toilette?"
+  q_en:
+    - "Do you have a toilet?"
+  a_it: "{toilet}"
+  a_en: "{toilet}"
+  needs: [toilet]
+
+- id: wifi
+  cat: igiene
+  q_it:
+    - "Avete il wifi?"
+    - "C'è la connessione?"
+  q_en:
+    - "Do you have wifi?"
+  a_it: "{wifi}"
+  a_en: "{wifi}"
+  needs: [wifi]
+
+- id: bevande
+  cat: igiene
+  q_it:
+    - "Offrite un caffè?"
+    - "Avete qualcosa da bere?"
+  q_en:
+    - "Do you offer drinks?"
+  a_it: "{drinks}"
+  a_en: "{drinks}"
+  needs: [drinks]
+
+- id: aria_condizionata
+  cat: igiene
+  q_it:
+    - "Avete l'aria condizionata?"
+    - "In estate fa caldo in salone?"
+  q_en:
+    - "Is there air conditioning?"
+  a_it: "{air_conditioning}"
+  a_en: "{air_conditioning}"
+  needs: [air_conditioning]
+
+# ===================== 10. PRODOTTI, BUONI REGALO / PRODUCTS & GIFT CARDS (9) =====================
+- id: vendete_prodotti
+  cat: prodotti
+  q_it:
+    - "Vendete prodotti?"
+    - "Posso comprare la cera che usate?"
+    - "Che marche usate?"
+  q_en:
+    - "Do you sell products?"
+    - "What brands do you use?"
+  a_it: "{products_sold}"
+  a_en: "{products_sold}"
+  needs: [products_sold]
+
+- id: buono_regalo
+  cat: prodotti
+  q_it:
+    - "Fate buoni regalo?"
+    - "Posso regalare un taglio?"
+    - "Avete gift card?"
+  q_en:
+    - "Do you sell gift cards?"
+    - "Can I gift a haircut?"
+  a_it: "{gift_cards}"
+  a_en: "{gift_cards}"
+  needs: [gift_cards]
+
+- id: abbonamento
+  cat: prodotti
+  q_it:
+    - "Avete abbonamenti?"
+    - "C'è un pacchetto di più tagli?"
+  q_en:
+    - "Do you have memberships or packages?"
+  a_it: "{loyalty}"
+  a_en: "{loyalty}"
+  needs: [loyalty]
+
+- id: regolabarba
+  cat: prodotti
+  q_it:
+    - "Che regolabarba mi consigliate?"
+    - "Che rasoio compro per casa?"
+  q_en:
+    - "What trimmer should I buy?"
+  a_it: "Per casa basta un buon regolabarba con pettini di diverse lunghezze e lame in acciaio. Il barbiere le può consigliare un modello di persona."
+  a_en: "For home use, a good trimmer with several guard lengths and steel blades is enough. The barber can recommend a model in person."
+
+- id: shampoo_consiglio
+  cat: prodotti
+  q_it:
+    - "Che shampoo mi consigliate?"
+    - "Che shampoo per uomo?"
+  q_en:
+    - "What shampoo do you recommend?"
+  a_it: "Dipende dal tipo di capelli: per capelli grassi uno purificante, per secchi uno idratante, per tutti i giorni uno delicato. Il barbiere le consiglia quello giusto."
+  a_en: "It depends on your hair: purifying for oily, moisturising for dry, gentle for daily use. The barber can recommend the right one."
+
+- id: prodotti_naturali
+  cat: prodotti
+  q_it:
+    - "Usate prodotti naturali?"
+    - "Avete prodotti bio?"
+  q_en:
+    - "Do you use natural products?"
+  a_it: "{products_sold}"
+  a_en: "{products_sold}"
+  needs: [products_sold]
+
+- id: promozioni
+  cat: prodotti
+  q_it:
+    - "Avete promozioni?"
+    - "Ci sono offerte questo mese?"
+  q_en:
+    - "Any offers or promotions?"
+  a_it: "{discounts}"
+  a_en: "{discounts}"
+  needs: [discounts]
+
+- id: recensione
+  cat: prodotti
+  q_it:
+    - "Dove lascio una recensione?"
+    - "Posso recensirvi su Google?"
+  q_en:
+    - "Where can I leave a review?"
+  a_it: "Grazie, ci fa molto piacere! Può lasciarla qui: {review_link}"
+  a_en: "Thank you, that means a lot! You can leave it here: {review_link}"
+  needs: [review_link]
+
+- id: grazie
+  cat: prodotti
+  q_it:
+    - "Grazie"
+    - "Ottimo lavoro"
+    - "Mi è piaciuto molto il taglio"
+  q_en:
+    - "Thanks"
+    - "Great job"
+    - "I loved the cut"
+  a_it: "Grazie a lei, ci fa davvero piacere! A presto in salone."
+  a_en: "Thank you, that's great to hear! See you soon."
