@@ -166,6 +166,18 @@ existing WhatsApp Business app number, then scan the QR code from the salon's ph
 - When the owner replies to a customer from the app, the bot stops answering in that chat for 12 hours
   (change with `HANDOFF_PAUSE_HOURS`).
 
+### The owner's page
+
+Set `OWNER_PASSWORD` in `.env` and open `https://YOUR-DOMAIN/titolare` on the owner's phone
+(then "Add to home screen" so it works like an app). It shows:
+
+- how full each day is (a percentage and a bar), for the next 7 days
+- today's bookings with name, service and a WhatsApp link to the customer
+- the free times still left
+- buttons to add a booking (for phone calls or walk-ins), block time (a break, a day off) or cancel
+
+Anything added or blocked here is respected by the bot straight away.
+
 ### Owner commands
 
 The owner can send these to the bot's number:

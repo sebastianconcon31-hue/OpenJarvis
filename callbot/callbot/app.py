@@ -79,7 +79,14 @@ app = FastAPI(title="CallBot", lifespan=lifespan)
 if os.environ.get("DEMO_ENABLED", "").lower() in ("1", "true", "yes"):
     from .demo import make_demo_router
 
-    app.include_router(make_demo_router(salon, settings, llm, os.environ.get("DEMO_PASSWORD", ""), faq))
+    shared = os.environ.get("DEMO_SHARED_CALENDAR", "").lower() in ("1", "true", "yes")
+    app.include_router(make_demo_router(salon, settings, llm, os.environ.get("DEMO_PASSWORD", ""), faq,
+                                        calendar if shared else None))
+
+if os.environ.get("OWNER_PASSWORD"):
+    from .owner import make_owner_router
+
+    app.include_router(make_owner_router(booking, os.environ["OWNER_PASSWORD"]))
 
 
 @app.get("/")

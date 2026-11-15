@@ -355,3 +355,36 @@ def test_broken_ai_reply_is_retried_and_english_is_requested():
     bot.handle("391", "ok, what are your prices?", "Tom")
     assert sent[-1][1] == "Our men's cut is €15."
     assert "rispondi in inglese" in llm.calls[0][0]["content"]
+
+
+# ---------------- owner's page ----------------
+
+def test_owner_page_shows_day_and_manages_bookings():
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+
+    from callbot.owner import make_owner_router
+
+    b = make_booking()
+    b.book("Taglio uomo", datetime(2026, 11, 18, 9, 0, tzinfo=TZ), "Luca Rossi", "391")
+    app = FastAPI()
+    app.include_router(make_owner_router(b, "segreta"))
+    c = TestClient(app)
+    H = {"X-Owner-Password": "segreta"}
+    assert c.get("/titolare/api/day?d=2026-11-18").status_code == 401
+    day = c.get("/titolare/api/day?d=2026-11-18", headers=H).json()
+    assert day["open"] and day["count"] == 1 and day["items"][0]["name"] == "Luca Rossi"
+    assert 0 < day["full"] < 10 and day["free"][0] == "09:30-12:30"
+    # walk-in booked by the owner right now, despite the 60-minute notice rule
+    r = c.post("/titolare/api/book", headers=H, json={"date": "2026-11-17", "time": "10:15",
+                                                     "service": "Barba", "name": "Walk-in"})
+    assert r.status_code == 200, r.text
+    # block the afternoon: the bot can't book there any more
+    c.post("/titolare/api/block", headers=H, json={"date": "2026-11-18", "start": "15:00", "end": "19:30"})
+    assert not [s for s in b.free_slots("Taglio uomo", date(2026, 11, 18)) if s.hour >= 15]
+    # cancel
+    c.post("/titolare/api/cancel", headers=H, json={"id": day["items"][0]["id"]})
+    assert c.get("/titolare/api/day?d=2026-11-18", headers=H).json()["count"] == 0
+    week = c.get("/titolare/api/week?d=2026-11-16", headers=H).json()["days"]
+    assert len(week) == 7 and week[0]["open"] is False  # Monday closed
+    assert "Agenda" in c.get("/titolare").text

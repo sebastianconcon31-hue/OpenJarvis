@@ -54,9 +54,13 @@ class Booking:
             return None
         return free_candidates[0]
 
-    def _check_window(self, start: datetime) -> None:
+    def _check_window(self, start: datetime, ignore_notice: bool = False) -> None:
         now = self.now()
-        if start < now + timedelta(minutes=self.salon.min_notice_minutes):
+        if ignore_notice:
+            # The owner can book right away (a walk-in), just not in the past.
+            if start < now - timedelta(minutes=30):
+                raise BookingError("Quell'orario è già passato.")
+        elif start < now + timedelta(minutes=self.salon.min_notice_minutes):
             raise BookingError(
                 f"Serve almeno {self.salon.min_notice_minutes} minuti di preavviso."
             )
@@ -76,7 +80,7 @@ class Booking:
     # -- public --------------------------------------------------------------
 
     def free_slots(self, service_name: str, day: date, barber: str | None = None,
-                   limit: int = 40) -> list[datetime]:
+                   limit: int = 40, ignore_notice: bool = False) -> list[datetime]:
         service = self.salon.service(service_name)
         if not service:
             raise BookingError(
@@ -93,7 +97,7 @@ class Booking:
         events = self.cal.list(day_start, day_start + timedelta(days=1))
         dur = timedelta(minutes=service.minutes)
         step = timedelta(minutes=self.salon.slot_step_minutes)
-        earliest = self.now() + timedelta(minutes=self.salon.min_notice_minutes)
+        earliest = self.now() + timedelta(minutes=0 if ignore_notice else self.salon.min_notice_minutes)
         slots: list[datetime] = []
         for a, b in self.salon.hours[day.weekday()]:
             t = datetime.combine(day, a, tz)
@@ -105,14 +109,14 @@ class Booking:
         return slots[:limit]
 
     def book(self, service_name: str, start: datetime, customer_name: str, phone: str,
-             barber: str | None = None) -> Appointment:
+             barber: str | None = None, ignore_notice: bool = False) -> Appointment:
         service = self.salon.service(service_name)
         if not service:
             raise BookingError(f"Servizio sconosciuto '{service_name}'.")
         if start.tzinfo is None:
             start = start.replace(tzinfo=self.salon.tz)
         end = start + timedelta(minutes=service.minutes)
-        self._check_window(start)
+        self._check_window(start, ignore_notice)
         if not self._fits_hours(start, end):
             raise BookingError("Il negozio è chiuso in quell'orario.")
         if start.minute % self.salon.slot_step_minutes:

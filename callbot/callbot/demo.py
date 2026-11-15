@@ -32,9 +32,10 @@ def fake_phone(session: str) -> str:
     return "39000" + digits.zfill(7)
 
 
-def make_demo_router(salon, settings, llm, password: str = "", faq=None) -> APIRouter:
+def make_demo_router(salon, settings, llm, password: str = "", faq=None, calendar=None) -> APIRouter:
+    """calendar: pass the real one to show demo bookings on the owner's page (demo only!)."""
     router = APIRouter()
-    calendar = LocalCalendar()
+    calendar = calendar or LocalCalendar()
     booking = Booking(salon, calendar)
     store = Store()
     outbox: dict[str, list[str]] = {}
