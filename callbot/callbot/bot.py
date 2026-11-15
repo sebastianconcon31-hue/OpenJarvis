@@ -195,7 +195,8 @@ class Receptionist:
         sent: list[str] = []
 
         def say(t: str) -> None:
-            t = t.strip()
+            # WhatsApp uses *single* asterisks for bold; models often write **markdown**.
+            t = re.sub(r"\*\*(.+?)\*\*", r"*\1*", t).strip()
             if t:
                 self.send(phone, t)
                 self.store.add(phone, "assistant", t)
