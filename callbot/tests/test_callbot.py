@@ -329,3 +329,17 @@ def test_bot_uses_faq_tool():
     result = json.loads(llm.calls[1][-1]["content"])
     assert result["results"][0]["id"] == "parcheggio"
     assert sent[-1].startswith("C'è un parcheggio")
+
+
+def test_opening_message_matches_customer_language():
+    from callbot.bot import detect_lang
+
+    assert detect_lang("Hey, what exact hours are you open?", SALON) == "en"
+    assert detect_lang("Ciao, che orari fate?", SALON) == "it"
+    assert detect_lang("Buongiorno, vorrei prenotare un taglio", SALON) == "it"
+    bot, *_, sent, _ = make_bot(["We're open Tuesday to Saturday."])
+    bot.handle("391", "Hey, what exact hours are you open?", "Tom")
+    assert sent[0][1] == ai_notice(SALON, "en") and sent[0][1].startswith("Hi!")
+    bot2, *_, sent2, _ = make_bot(["non serve"])
+    bot2.handle("392", "I want to talk to a real person", "Tom")
+    assert sent2[-1][1] == handoff_reply(SALON, "en")

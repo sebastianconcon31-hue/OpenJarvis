@@ -19,14 +19,36 @@ GIORNI = ["lunedì", "martedì", "mercoledì", "giovedì", "venerdì", "sabato",
 MESI = ["gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno", "luglio", "agosto",
         "settembre", "ottobre", "novembre", "dicembre"]
 
-HUMAN_WORDS = re.compile(r"\b(operatore|persona reale|parlare con (una persona|il titolare|qualcuno)|umano|human|real person)\b", re.I)
+HUMAN_WORDS = re.compile(r"\b(operatore|operator|persona reale|parlare con (una persona|il titolare|qualcuno)|umano|human|real person)\b", re.I)
 
 
 def it_date(d: date) -> str:
     return f"{GIORNI[d.weekday()]} {d.day} {MESI[d.month - 1]}"
 
 
-def ai_notice(salon: Salon) -> str:
+EN_WORDS = set("""hi hello hey the a an is are you your what when where how much does do can could
+would please thanks thank appointment book booking haircut hair cut beard price prices open
+opening hours time today tomorrow i i'm my me want need like have there any is it of to for and""".split())
+IT_WORDS = set("""ciao salve buongiorno buonasera il lo la gli le un una che come quanto quando dove
+sono siete avete fate posso vorrei prenotare prenotazione appuntamento taglio barba prezzo
+prezzi orari aperti oggi domani grazie per con di del della mi è e""".split())
+
+
+def detect_lang(text: str, salon: Salon) -> str:
+    """'en' if the message looks English (and the salon answers in English), else 'it'."""
+    if "en" not in salon.languages:
+        return "it"
+    words = re.findall(r"[a-zàèéìòù']+", text.lower())
+    en = sum(w in EN_WORDS for w in words)
+    it = sum(w in IT_WORDS for w in words)
+    return "en" if en > it else "it"
+
+
+def ai_notice(salon: Salon, lang: str = "it") -> str:
+    if lang == "en":
+        return (f"Hi! You're chatting with {salon.name}'s virtual assistant (AI). "
+                "I can answer questions and book appointments. "
+                "If you'd rather talk to a person, just type \"operator\".")
     if salon.formal:
         return (f"Buongiorno! Le risponde l'assistente virtuale (AI) di {salon.name}. "
                 "Posso darle informazioni e prenotare un appuntamento. "
@@ -36,13 +58,17 @@ def ai_notice(salon: Salon) -> str:
             "Se preferisci parlare con una persona, scrivi \"operatore\".")
 
 
-def handoff_reply(salon: Salon) -> str:
+def handoff_reply(salon: Salon, lang: str = "it") -> str:
+    if lang == "en":
+        return "I've let the owner know, and they'll reply to you personally as soon as possible. Thanks for your patience!"
     if salon.formal:
         return "Ho avvisato il titolare, le risponderà personalmente appena possibile. Grazie per la pazienza!"
     return "Ho avvisato il titolare, ti risponderà di persona appena possibile. Grazie per la pazienza!"
 
 
-def error_reply(salon: Salon) -> str:
+def error_reply(salon: Salon, lang: str = "it") -> str:
+    if lang == "en":
+        return "Sorry, I'm having a technical problem right now. I've let the owner know, and they'll reply as soon as possible."
     if salon.formal:
         return "Mi scusi, in questo momento ho un problema tecnico. Ho avvisato il titolare, che le risponderà appena possibile."
     return "Scusa, in questo momento ho un problema tecnico. Ho avvisato il titolare, che ti risponderà appena possibile."
@@ -213,12 +239,13 @@ class Receptionist:
         if self.store.is_paused(phone):
             return sent  # the owner is handling this chat
 
+        lang = detect_lang(text, self.salon)
         if new_chat:
-            say(ai_notice(self.salon))
+            say(ai_notice(self.salon, lang))
 
         if HUMAN_WORDS.search(text):
             self._handoff(phone, f"Il cliente ha chiesto di parlare con una persona. Messaggio: \"{text}\"")
-            say(handoff_reply(self.salon))
+            say(handoff_reply(self.salon, lang))
             return sent
 
         try:
@@ -226,10 +253,10 @@ class Receptionist:
         except Exception:  # noqa: BLE001 - never leave a customer without an answer
             log.exception("AI step failed for %s", phone)
             self._handoff(phone, f"Errore tecnico del bot. Ultimo messaggio del cliente: \"{text}\"")
-            say(error_reply(self.salon))
+            say(error_reply(self.salon, lang))
             return sent
         if not reply and handed_off:
-            reply = handoff_reply(self.salon)
+            reply = handoff_reply(self.salon, lang)
         say(reply)
         return sent
 
