@@ -30,7 +30,10 @@ class LLM:
             body["tools"] = tools
             body["tool_choice"] = "auto"
         last_err = None
-        for attempt in range(3):
+        deadline = time.monotonic() + 50  # free plans allow only so many words per minute: wait it out
+        for attempt in range(6):
+            if attempt and time.monotonic() > deadline:
+                break
             try:
                 r = httpx.post(
                     f"{self.base_url}/chat/completions",
@@ -40,8 +43,11 @@ class LLM:
                 )
                 if r.status_code in (429, 500, 502, 503, 504):
                     last_err = LLMError(f"{r.status_code}: {r.text[:200]}")
-                    wait = float(r.headers.get("retry-after", 2 * (attempt + 1)))
-                    time.sleep(min(wait, 10))
+                    try:
+                        wait = float(r.headers.get("retry-after", 2 * (attempt + 1)))
+                    except ValueError:
+                        wait = 2 * (attempt + 1)
+                    time.sleep(max(1.0, min(wait + 0.5, 20, deadline - time.monotonic())))
                     continue
                 if r.status_code >= 400:
                     raise LLMError(f"{r.status_code}: {r.text[:500]}")
