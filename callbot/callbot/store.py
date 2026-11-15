@@ -102,5 +102,9 @@ class Store:
         rows = self._exec("SELECT v FROM kv WHERE k=?", (k,))
         return rows[0][0] if rows else None
 
+    def values_with_prefix(self, prefix: str) -> list[str]:
+        rows = self._exec("SELECT v FROM kv WHERE k LIKE ? AND v != ''", (prefix + "%",))
+        return [r[0] for r in rows]
+
     def set(self, k: str, v: str) -> None:
         self._exec("INSERT OR REPLACE INTO kv VALUES (?,?)", (k, v))

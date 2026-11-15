@@ -175,8 +175,23 @@ Set `OWNER_PASSWORD` in `.env` and open `https://YOUR-DOMAIN/titolare` on the ow
 - today's bookings with name, service and a WhatsApp link to the customer
 - the free times still left
 - buttons to add a booking (for phone calls or walk-ins), block time (a break, a day off) or cancel
+- **Sposta** (move): pick a new time. The bot texts the customer "can you make it at this time? yes or no".
+  The new time is held for them. If they say yes, the old booking goes; if no, the old one stays and
+  she gets an alert on her page.
+- **Cancella**: with "Avvisa il cliente" ticked, the bot texts the customer that it's cancelled
+  (with a reason if she writes one) and offers another time.
+- a switch at the top: **⚡ Automatico** (the bot books by itself) or **✋ Da approvare** (the bot
+  holds the time and tells the customer it's a request; she taps Accetta or Rifiuta and the bot
+  texts the customer the answer).
 
-Anything added or blocked here is respected by the bot straight away.
+Anything added or blocked here is respected by the bot straight away. The bot already has every
+customer's WhatsApp number from their booking, so nothing extra needs saving.
+
+If the customer hasn't written in the last 24 hours, WhatsApp only allows a template, so also create
+**`aggiornamento_appuntamento`** (Utility, Italian):
+```
+Ciao {{1}}, c'è un aggiornamento sul tuo appuntamento ({{2}}, {{3}}) da {{4}}. Rispondi a questo messaggio per i dettagli.
+```
 
 ### Owner commands
 

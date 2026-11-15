@@ -16,6 +16,7 @@ from pydantic import BaseModel
 
 from .agenda import LocalCalendar
 from .booking import Booking
+from .changes import pending_requests
 from .bot import GIORNI, Receptionist
 from .store import Store
 
@@ -32,12 +33,19 @@ def fake_phone(session: str) -> str:
     return "39000" + digits.zfill(7)
 
 
-def make_demo_router(salon, settings, llm, password: str = "", faq=None, calendar=None) -> APIRouter:
-    """calendar: pass the real one to show demo bookings on the owner's page (demo only!)."""
+def make_demo_router(salon, settings, llm, password: str = "", faq=None, calendar=None,
+                     store=None) -> APIRouter:
+    """calendar/store: pass the real ones so demo bookings show on the owner's page (demo only!)."""
     router = APIRouter()
     calendar = calendar or LocalCalendar()
     booking = Booking(salon, calendar)
-    store = Store()
+    store = store or Store()
+    inbox: dict[str, list[str]] = {}  # messages the bot sends first (owner moved/cancelled a booking)
+
+    def push(phone: str, text: str) -> None:
+        inbox.setdefault(phone, []).append(text)
+
+    router.push = push
     outbox: dict[str, list[str]] = {}
     owner_alerts: list[str] = []
 
@@ -68,12 +76,22 @@ def make_demo_router(salon, settings, llm, password: str = "", faq=None, calenda
         paused = store.is_paused(phone)
         return {"replies": replies, "handed_off": paused}
 
+    @router.post("/demo/inbox")
+    def get_inbox(body: ChatIn):
+        if not allowed(body.password):
+            return JSONResponse({"error": "password"}, status_code=401)
+        return {"messages": inbox.pop(fake_phone(body.session), [])}
+
     @router.post("/demo/reset")
     def reset(body: ChatIn):
         if not allowed(body.password):
             return JSONResponse({"error": "password"}, status_code=401)
         phone = fake_phone(body.session)
         store.forget(phone)
+        store.set(f"proposal:{phone}", "")
+        for r in pending_requests(store):
+            if r["phone"] == phone:
+                store.set(f"request:{r['id']}", "")
         for a in booking.upcoming_for(phone):
             calendar.delete(a.id)
         return {"ok": True}
@@ -145,5 +163,7 @@ document.getElementById("f").onsubmit=async e=>{e.preventDefault();const t=inp.v
 try{const d=await post("/demo/chat",{session,text:t,password:pw});ty.remove();(d.replies||[]).forEach(r=>add(r,"bot"));if(d.handed_off)add("Chat passata al titolare: il bot ora resta in silenzio. / Chat handed to the owner: the bot stays quiet now. Premi Ricomincia per riprovare.","sys")}catch(err){ty.remove();add(err.message||"Errore","sys")}refresh()};
 document.getElementById("reset").onclick=async()=>{try{await post("/demo/reset",{session,text:"",password:pw})}catch(e){}chat.querySelectorAll(".m").forEach(m=>m.remove());refresh()};
 document.getElementById("toggle").onclick=()=>document.getElementById("side").classList.toggle("show");
+async function poll(){try{const d=await post("/demo/inbox",{session,text:"",password:pw});(d.messages||[]).forEach(m=>add(m,"bot"));if((d.messages||[]).length)refresh()}catch(e){}}
+setInterval(poll,4000);
 refresh();
 </script></body></html>"""

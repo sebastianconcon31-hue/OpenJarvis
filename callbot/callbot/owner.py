@@ -15,6 +15,7 @@ from pydantic import BaseModel
 
 from .agenda import ALL_BARBERS, Appointment
 from .booking import Booking, BookingError
+from . import changes
 
 GIORNI = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"]
 
@@ -37,6 +38,24 @@ class BlockIn(BaseModel):
 
 class CancelIn(BaseModel):
     id: str
+    notify: bool = True
+    reason: str = ""
+
+
+class MoveIn(BaseModel):
+    id: str
+    date: str
+    time: str
+
+
+class AnswerIn(BaseModel):
+    id: str
+    accept: bool
+    reason: str = ""
+
+
+class ModeIn(BaseModel):
+    mode: str
 
 
 def _open_minutes(booking: Booking, d: date) -> int:
@@ -46,7 +65,7 @@ def _open_minutes(booking: Booking, d: date) -> int:
                for a, b in booking.salon.hours[d.weekday()])
 
 
-def day_summary(booking: Booking, d: date) -> dict:
+def day_summary(booking: Booking, d: date, store=None) -> dict:
     """Bookings, free time and how full the day is (0-100%)."""
     salon = booking.salon
     tz = salon.tz
@@ -83,6 +102,12 @@ def day_summary(booking: Booking, d: date) -> dict:
             if run is not None and close - run >= timedelta(minutes=15):
                 free_ranges.append(f"{run:%H:%M}-{close:%H:%M}")
 
+    requests = {r["id"] for r in changes.pending_requests(store)} if store else set()
+    moving_from, moving_to = set(), set()
+    if store:
+        for p in changes.all_proposals(store):
+            moving_from.add(p["old_id"])
+            moving_to.add(p["new_id"])
     items = []
     for e in sorted(events, key=lambda e: e.start):
         blocked = not e.phone and not e.customer_name
@@ -96,6 +121,8 @@ def day_summary(booking: Booking, d: date) -> dict:
             "barber": "" if e.barber == ALL_BARBERS or chairs == 1 else e.barber,
             "blocked": blocked,
             "all_day": e.barber == ALL_BARBERS and (e.end - e.start) >= timedelta(hours=23),
+            "status": ("request" if e.id in requests else "moving_from" if e.id in moving_from
+                       else "moving_to" if e.id in moving_to else ""),
         })
     hours = salon.hours[d.weekday()] if booking.is_open_day(d) else []
     return {
@@ -110,9 +137,12 @@ def day_summary(booking: Booking, d: date) -> dict:
     }
 
 
-def make_owner_router(booking: Booking, password: str) -> APIRouter:
+def make_owner_router(booking: Booking, password: str, store=None, message=None) -> APIRouter:
+    """store: the bot's memory (for modes, requests, answers). message(phone, text, params) -> bool
+    sends a WhatsApp message to a customer."""
     router = APIRouter()
     salon = booking.salon
+    message = message or (lambda *a: False)
 
     def ok(pw: str | None) -> bool:
         return bool(password) and hmac.compare_digest((pw or "").encode(), password.encode())
@@ -130,7 +160,12 @@ def make_owner_router(booking: Booking, password: str) -> APIRouter:
         if not ok(x_owner_password):
             return denied()
         when = date.fromisoformat(d) if d else booking.now().date()
-        return day_summary(booking, when)
+        out = day_summary(booking, when, store)
+        if store:
+            out["mode"] = changes.mode(store)
+            out["requests"] = sorted(changes.pending_requests(store), key=lambda r: r["t"])
+            out["alerts"] = list(reversed(changes.owner_alerts(store)))[:5]
+        return out
 
     @router.get("/titolare/api/week")
     def week(d: str = "", x_owner_password: str | None = Header(default=None)):
@@ -139,7 +174,7 @@ def make_owner_router(booking: Booking, password: str) -> APIRouter:
         first = date.fromisoformat(d) if d else booking.now().date()
         out = []
         for i in range(7):
-            s = day_summary(booking, first + timedelta(days=i))
+            s = day_summary(booking, first + timedelta(days=i), store)
             out.append({k: s[k] for k in ("date", "label", "open", "full", "count")})
         return {"days": out}
 
@@ -170,12 +205,54 @@ def make_owner_router(booking: Booking, password: str) -> APIRouter:
         a = booking.cal.create(Appointment("", s, e, body.reason or "Bloccato", "", "", ALL_BARBERS, True))
         return {"ok": True, "id": a.id}
 
+    def find(appt_id: str) -> Appointment | None:
+        now = booking.now()
+        return next((a for a in booking.cal.list(now - timedelta(days=2), now + timedelta(days=400))
+                     if a.id == appt_id), None)
+
     @router.post("/titolare/api/cancel")
     def cancel(body: CancelIn, x_owner_password: str | None = Header(default=None)):
         if not ok(x_owner_password):
             return denied()
+        appt = find(body.id)
+        told = False
+        if appt and store is not None:
+            store.set(f"request:{appt.id}", "")
+            if body.notify and appt.phone and appt.start > booking.now():
+                told = changes.notify_cancel(booking, store, message, appt, salon.name, body.reason)
         booking.cal.delete(body.id)
-        return {"ok": True}
+        return {"ok": True, "customer_told": told}
+
+    @router.post("/titolare/api/move")
+    def move(body: MoveIn, x_owner_password: str | None = Header(default=None)):
+        if not ok(x_owner_password):
+            return denied()
+        if store is None:
+            return JSONResponse({"error": "Non disponibile."}, status_code=400)
+        try:
+            new_start = datetime.fromisoformat(f"{body.date}T{body.time}").replace(tzinfo=salon.tz)
+            p = changes.propose_move(booking, store, message, body.id, new_start, salon.name)
+        except (BookingError, ValueError) as e:
+            return JSONResponse({"error": str(e)}, status_code=400)
+        return {"ok": True, "asked": p["new_when"]}
+
+    @router.post("/titolare/api/answer")
+    def answer(body: AnswerIn, x_owner_password: str | None = Header(default=None)):
+        if not ok(x_owner_password):
+            return denied()
+        try:
+            return changes.answer_request(booking, store, message, body.id, body.accept, salon.name, body.reason)
+        except BookingError as e:
+            return JSONResponse({"error": str(e)}, status_code=400)
+
+    @router.post("/titolare/api/mode")
+    def set_mode(body: ModeIn, x_owner_password: str | None = Header(default=None)):
+        if not ok(x_owner_password):
+            return denied()
+        if store is None:
+            return JSONResponse({"error": "Non disponibile."}, status_code=400)
+        changes.set_mode(store, body.mode)
+        return {"ok": True, "mode": changes.mode(store)}
 
     return router
 
@@ -224,9 +301,27 @@ input,select{width:100%;height:44px;border-radius:10px;border:1px solid var(--li
 .row{display:flex;gap:8px}.row>div{flex:1}
 .actions{display:flex;gap:8px;margin-top:16px}.actions button{flex:1;height:44px;border-radius:10px;border:0;font-weight:600}
 .err{color:var(--warn);font-size:13px;margin-top:8px;min-height:1em}
+.seg{display:flex;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:3px;gap:3px}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);height:38px;border-radius:9px;font-weight:600}
+.seg button.on{background:var(--accent);color:#fff}
+.modehint{font-size:12.5px;color:var(--muted);margin:6px 2px 12px}
+.alert{background:var(--accent-soft);border-radius:10px;padding:8px 12px;font-size:13.5px;margin-bottom:6px}
+.req{display:flex;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}.req:first-of-type{border-top:0}
+.req .who{flex:1}.req .who b{display:block}
+.ok,.no{border:0;border-radius:10px;height:38px;padding:0 12px;font-weight:600}.ok{background:var(--accent);color:#fff}.no{background:var(--warn-soft);color:var(--warn)}
+.badge{display:inline-block;font-size:11.5px;font-weight:700;border-radius:999px;padding:1px 8px;margin-top:4px}
+.b-req{background:var(--warn-soft);color:var(--warn)}.b-move{background:var(--accent-soft);color:var(--accent)}
+.item.faded{opacity:.55}
+.mini{border:1px solid var(--line);background:transparent;color:var(--text);border-radius:8px;height:30px;padding:0 10px;font-size:13px}
+.check{display:flex;gap:8px;align-items:center;margin-top:12px;font-size:14px}.check input{width:20px;height:20px}
+h3.sec{font-size:14px;margin:0 0 4px}
 </style></head><body><div class="wrap">
 <header><button class="nav" id="prev" aria-label="Giorno prima">‹</button><h1 id="title">Agenda</h1>
 <button class="today-btn" id="today">Oggi</button><button class="nav" id="next" aria-label="Giorno dopo">›</button></header>
+<div class="seg" id="seg"><button data-m="auto">⚡ Automatico</button><button data-m="approve">✋ Da approvare</button></div>
+<div class="modehint" id="modehint"></div>
+<div id="alerts"></div>
+<div class="card" id="reqs" style="display:none"></div>
 <div class="week" id="week"></div>
 <div class="card"><div class="big"><span class="pct" id="pct">–</span><span id="pctlabel" class="muted">pieno</span></div>
 <div class="meter" id="meter"><i id="meterfill" style="width:0"></i></div>
@@ -252,9 +347,23 @@ input,select{width:100%;height:44px;border-radius:10px;border:1px solid var(--li
 <div class="err" id="bErr"></div>
 <div class="actions"><button class="secondary" data-close>Annulla</button><button class="primary" id="bSave">Blocca</button></div></dialog>
 
+<dialog id="moveDlg"><h2>Sposta appuntamento</h2>
+<div class="muted" id="mWho"></div>
+<div class="row"><div><label>Nuovo giorno</label><input type="date" id="mDate"></div><div><label>Nuova ora</label><input type="time" id="mTime" step="900"></div></div>
+<div class="muted" style="margin-top:10px">Il bot scrive al cliente e gli chiede se il nuovo orario va bene. Il vecchio resta finché non risponde.</div>
+<div class="err" id="mErr"></div>
+<div class="actions"><button class="secondary" data-close>Annulla</button><button class="primary" id="mSave">Chiedi al cliente</button></div></dialog>
+
+<dialog id="cancelDlg"><h2>Cancella appuntamento</h2>
+<div class="muted" id="cWho"></div>
+<label>Motivo (facoltativo, lo vede il cliente)</label><input id="cReason" placeholder="Es. imprevisto">
+<label class="check" id="cNotifyRow"><input type="checkbox" id="cNotify" checked> Avvisa il cliente su WhatsApp</label>
+<div class="err" id="cErr"></div>
+<div class="actions"><button class="secondary" data-close>Indietro</button><button class="no" id="cSave" style="flex:1;height:44px">Cancella</button></div></dialog>
+
 <script>
 let pw="";try{pw=localStorage.getItem("ownerpw")||""}catch(e){}
-let day=null,todayIso=null;
+let day=null,todayIso=null,items=[],mode="auto",current=null;
 const $=id=>document.getElementById(id);
 function iso(d){return d.toISOString().slice(0,10)}
 function shift(s,n){const d=new Date(s+"T12:00:00");d.setDate(d.getDate()+n);return iso(d)}
@@ -271,7 +380,14 @@ async function load(d){
   $("meterfill").style.width=(s.open?s.full:0)+"%";$("meter").classList.toggle("hot",s.full>=85);
   $("hours").textContent=s.open?"Orario: "+s.hours:"Il salone è chiuso questo giorno.";
   $("free").innerHTML=s.free.length?s.free.map(f=>'<span class="chip">'+f+"</span>").join(""):'<span class="muted">'+(s.open?"nessun orario libero":"–")+"</span>";
-  $("list").innerHTML=s.items.length?s.items.map(i=>'<div class="item'+(i.blocked?" blocked":"")+'"><div class="t">'+(i.all_day?"Tutto il giorno":i.start+"–"+i.end)+'</div><div class="who"><b>'+esc(i.blocked?("🔒 "+i.service):i.name)+"</b>"+(i.blocked?"":'<span class="muted">'+esc(i.service)+(i.barber?" · "+esc(i.barber):"")+"</span>")+(i.phone?'<br><a href="https://wa.me/'+i.phone+'">WhatsApp +'+i.phone+"</a>":"")+'</div><button class="x" data-id="'+i.id+'" aria-label="Cancella">✕</button></div>').join(""):'<div class="empty">Nessuna prenotazione</div>';
+  items=s.items;
+  const badge={request:'<span class="badge b-req">✋ Da approvare</span>',moving_to:'<span class="badge b-move">⏳ Proposto, in attesa del cliente</span>',moving_from:'<span class="badge b-move">↪ In spostamento</span>'};
+  $("list").innerHTML=s.items.length?s.items.map(i=>'<div class="item'+(i.blocked?" blocked":"")+(i.status==="moving_from"?" faded":"")+'"><div class="t">'+(i.all_day?"Tutto il giorno":i.start+"–"+i.end)+'</div><div class="who"><b>'+esc(i.blocked?("🔒 "+i.service):i.name)+"</b>"+(i.blocked?"":'<span class="muted">'+esc(i.service)+(i.barber?" · "+esc(i.barber):"")+"</span>")+(i.phone?'<br><a href="https://wa.me/'+i.phone+'">WhatsApp +'+i.phone+"</a>":"")+(badge[i.status]?"<br>"+badge[i.status]:"")+(!i.blocked&&i.phone&&!i.status?'<div style="margin-top:6px"><button class="mini" data-move="'+i.id+'">Sposta</button></div>':"")+'</div><button class="x" data-id="'+i.id+'" aria-label="Cancella">✕</button></div>').join(""):'<div class="empty">Nessuna prenotazione</div>';
+  mode=s.mode||"auto";document.querySelectorAll("#seg button").forEach(b=>b.classList.toggle("on",b.dataset.m===mode));
+  $("modehint").textContent=mode==="auto"?"Il bot conferma subito le prenotazioni negli orari liberi.":"Il bot tiene l'orario e aspetta che tu accetti o rifiuti ogni richiesta.";
+  $("alerts").innerHTML=(s.alerts||[]).map(a=>'<div class="alert">'+esc(a.text)+"</div>").join("");
+  const rq=s.requests||[];$("reqs").style.display=rq.length?"":"none";
+  $("reqs").innerHTML='<h3 class="sec">Richieste da approvare ('+rq.length+")</h3>"+rq.map(r=>'<div class="req"><div class="who"><b>'+esc(r.name)+'</b><span class="muted">'+esc(r.service)+" · "+esc(r.when)+'</span></div><button class="no" data-ans="0" data-id="'+r.id+'">Rifiuta</button><button class="ok" data-ans="1" data-id="'+r.id+'">Accetta</button></div>').join("");
   if(!d)todayIso=s.date;
   if(!todayIso)todayIso=(await api("day")).date;
   // The strip shows the next 7 days from today, or from the chosen day if it's further out.
@@ -281,7 +397,14 @@ async function load(d){
 }
 $("week").onclick=e=>{const el=e.target.closest(".wd");if(el)load(el.dataset.d)};
 $("prev").onclick=()=>load(shift(day,-1));$("next").onclick=()=>load(shift(day,1));$("today").onclick=()=>load("");
-$("list").onclick=async e=>{const b=e.target.closest(".x");if(!b)return;if(!confirm("Cancellare questo appuntamento?"))return;await api("cancel",{id:b.dataset.id});load(day)};
+$("list").onclick=e=>{
+  const mv=e.target.closest("[data-move]");const x=e.target.closest(".x");
+  if(mv){current=items.find(i=>i.id===mv.dataset.move);$("mWho").textContent=current.name+" · "+current.service+" · ora alle "+current.start;$("mDate").value=day;$("mTime").value="";$("mErr").textContent="";$("moveDlg").showModal()}
+  if(x){current=items.find(i=>i.id===x.dataset.id);$("cWho").textContent=(current.blocked?current.service:current.name+" · "+current.service)+" · "+current.start+"–"+current.end;$("cNotifyRow").style.display=current.phone?"":"none";$("cReason").value="";$("cErr").textContent="";$("cancelDlg").showModal()}};
+$("mSave").onclick=async()=>{try{await api("move",{id:current.id,date:$("mDate").value,time:$("mTime").value});$("moveDlg").close();load(day)}catch(err){$("mErr").textContent=err.message}};
+$("cSave").onclick=async()=>{try{await api("cancel",{id:current.id,notify:$("cNotify").checked,reason:$("cReason").value});$("cancelDlg").close();load(day)}catch(err){$("cErr").textContent=err.message}};
+$("seg").onclick=async e=>{const b=e.target.closest("button");if(!b)return;await api("mode",{mode:b.dataset.m});load(day)};
+$("reqs").onclick=async e=>{const b=e.target.closest("[data-ans]");if(!b)return;let reason="";try{await api("answer",{id:b.dataset.id,accept:b.dataset.ans==="1",reason});load(day)}catch(err){$("reqs").insertAdjacentHTML("beforeend",'<div class="err">'+esc(err.message)+"</div>")}};
 document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>b.closest("dialog").close());
 $("addBtn").onclick=()=>{$("aDate").value=day;$("aErr").textContent="";$("addDlg").showModal()};
 $("blockBtn").onclick=()=>{$("bDate").value=day;$("bErr").textContent="";$("blockDlg").showModal()};

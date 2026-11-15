@@ -388,3 +388,88 @@ def test_owner_page_shows_day_and_manages_bookings():
     week = c.get("/titolare/api/week?d=2026-11-16", headers=H).json()["days"]
     assert len(week) == 7 and week[0]["open"] is False  # Monday closed
     assert "Agenda" in c.get("/titolare").text
+
+
+# ---------------- owner moves / cancels, approve mode ----------------
+
+def _owner_setup(script=()):
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+
+    from callbot.owner import make_owner_router
+
+    bot, llm, b, sent, owner = make_bot(list(script))
+    outbox = []
+    app = FastAPI()
+    app.include_router(make_owner_router(b, "pw", bot.store, lambda p, t, params: outbox.append((p, t)) or True))
+    return bot, b, TestClient(app), {"X-Owner-Password": "pw"}, outbox, sent, owner
+
+
+def test_owner_moves_booking_customer_accepts():
+    bot, b, c, H, outbox, sent, _ = _owner_setup([
+        [("respond_to_change", {"accept": True})], "Perfetto, ci vediamo alle 11!"])
+    a = b.book("Taglio uomo", datetime(2026, 11, 18, 9, 0, tzinfo=TZ), "Luca Rossi", "391")
+    r = c.post("/titolare/api/move", headers=H, json={"id": a.id, "date": "2026-11-18", "time": "11:00"})
+    assert r.status_code == 200, r.text
+    assert outbox[0][0] == "391" and "11:00" in outbox[0][1] and "sì o no" in outbox[0][1]
+    day = c.get("/titolare/api/day?d=2026-11-18", headers=H).json()
+    assert {i["status"] for i in day["items"]} == {"moving_from", "moving_to"}
+    bot.handle("391", "sì va bene", "Luca")
+    appts = b.upcoming_for("391")
+    assert len(appts) == 1 and appts[0].start.hour == 11
+    assert "accettato" in c.get("/titolare/api/day?d=2026-11-18", headers=H).json()["alerts"][0]["text"]
+
+
+def test_owner_moves_booking_customer_declines():
+    bot, b, c, H, outbox, sent, owner = _owner_setup([
+        [("respond_to_change", {"accept": False})], "Nessun problema, resta alle 9."])
+    a = b.book("Taglio uomo", datetime(2026, 11, 18, 9, 0, tzinfo=TZ), "Luca Rossi", "391")
+    c.post("/titolare/api/move", headers=H, json={"id": a.id, "date": "2026-11-18", "time": "11:00"})
+    bot.handle("391", "no, non posso", "Luca")
+    appts = b.upcoming_for("391")
+    assert len(appts) == 1 and appts[0].start.hour == 9
+    assert owner and "non accetta" in owner[-1][2]
+    assert not bot.store.is_paused("391")
+
+
+def test_owner_cancel_tells_customer():
+    bot, b, c, H, outbox, *_ = _owner_setup()
+    a = b.book("Barba", datetime(2026, 11, 18, 9, 0, tzinfo=TZ), "Anna", "392")
+    c.post("/titolare/api/cancel", headers=H, json={"id": a.id, "reason": "imprevisto"})
+    assert outbox[0][0] == "392" and "cancellare" in outbox[0][1] and "imprevisto" in outbox[0][1]
+    assert b.upcoming_for("392") == []
+    a2 = b.book("Barba", datetime(2026, 11, 18, 10, 0, tzinfo=TZ), "Anna", "392")
+    c.post("/titolare/api/cancel", headers=H, json={"id": a2.id, "notify": False})
+    assert len(outbox) == 1
+
+
+def test_approve_mode_holds_slot_until_owner_accepts():
+    script = [
+        [("book_appointment", {"service": "Barba", "date": "2026-11-18", "time": "10:00", "customer_name": "Anna"})],
+        "Richiesta inviata! Ti confermo appena il titolare la vede.",
+    ]
+    bot, b, c, H, outbox, sent, owner = _owner_setup(script)
+    assert c.post("/titolare/api/mode", headers=H, json={"mode": "approve"}).json()["mode"] == "approve"
+    bot.handle("392", "barba domani alle 10", "Anna")
+    day = c.get("/titolare/api/day?d=2026-11-18", headers=H).json()
+    assert day["mode"] == "approve" and len(day["requests"]) == 1
+    assert day["items"][0]["status"] == "request" and owner  # owner was alerted
+    # held: nobody else can take it
+    assert "10:00" not in [s.strftime("%H:%M") for s in b.free_slots("Barba", date(2026, 11, 18))]
+    c.post("/titolare/api/answer", headers=H, json={"id": day["requests"][0]["id"], "accept": True})
+    assert "confermato" in outbox[-1][1]
+    assert c.get("/titolare/api/day?d=2026-11-18", headers=H).json()["requests"] == []
+    assert len(b.upcoming_for("392")) == 1
+
+
+def test_approve_mode_owner_declines_frees_slot():
+    script = [
+        [("book_appointment", {"service": "Barba", "date": "2026-11-18", "time": "10:00", "customer_name": "Anna"})],
+        "Richiesta inviata!",
+    ]
+    bot, b, c, H, outbox, *_ = _owner_setup(script)
+    c.post("/titolare/api/mode", headers=H, json={"mode": "approve"})
+    bot.handle("392", "barba domani alle 10", "Anna")
+    rid = c.get("/titolare/api/day?d=2026-11-18", headers=H).json()["requests"][0]["id"]
+    c.post("/titolare/api/answer", headers=H, json={"id": rid, "accept": False})
+    assert "non può" in outbox[-1][1] and b.upcoming_for("392") == []

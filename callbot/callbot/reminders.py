@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 
 
 def send_due_reminders(salon: Salon, settings: Settings, calendar: Calendar, send_template,
-                       now: datetime | None = None) -> int:
+                       now: datetime | None = None, skip_ids: set[str] | None = None) -> int:
     """After REMINDER_HOUR, remind everyone booked for tomorrow who hasn't been reminded yet.
     Safe to run as often as you like. Returns how many reminders were sent."""
     now = now or datetime.now(salon.tz)
@@ -22,7 +22,7 @@ def send_due_reminders(salon: Salon, settings: Settings, calendar: Calendar, sen
     start = datetime.combine(tomorrow, time(0), salon.tz)
     sent = 0
     for a in calendar.list(start, start + timedelta(days=1)):
-        if a.reminded or not a.phone:
+        if a.reminded or not a.phone or (skip_ids and a.id in skip_ids):
             continue
         first_name = (a.customer_name or "").split(" ")[0] or "cliente"
         ok = send_template(

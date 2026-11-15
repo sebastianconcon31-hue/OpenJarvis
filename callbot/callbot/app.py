@@ -19,6 +19,7 @@ from .bot import Receptionist
 from .config import load_dotenv, load_salon, load_settings
 from .faq import FAQ, load_faq
 from .llm import LLM, transcribe
+from .changes import pending_requests
 from .reminders import send_due_reminders
 from .store import Store
 from .whatsapp import WhatsApp, parse_webhook, valid_signature
@@ -52,12 +53,29 @@ def notify_owner(customer_phone: str, customer_name: str, reason: str) -> None:
 
 
 receptionist = Receptionist(salon, settings, llm, booking, store, wa.send_text, notify_owner, faq)
+demo_router = None
+
+
+def message_customer(phone: str, text: str, params: list[str]) -> bool:
+    """A message the bot sends first (owner moved/cancelled/confirmed a booking)."""
+    if demo_router is not None and phone.startswith("39000"):
+        demo_router.push(phone, text)  # pretend customer in the web demo
+        return True
+    if wa.send_text(phone, text):
+        return True
+    # Outside WhatsApp's 24-hour window only approved templates go through. This one says
+    # "there's an update about your appointment, reply for details"; the bot explains when they reply.
+    name, service, when, salon_name = params[0], params[1], params[2], params[-1]
+    return wa.send_template(phone, os.environ.get("UPDATE_TEMPLATE", "aggiornamento_appuntamento"), "it",
+                            [name, service, when, salon_name])
 
 
 async def reminder_loop() -> None:
     while True:
         try:
-            n = await asyncio.to_thread(send_due_reminders, salon, settings, calendar, wa.send_template)
+            pending = {r["id"] for r in pending_requests(store)}  # not confirmed yet: no reminder
+            n = await asyncio.to_thread(send_due_reminders, salon, settings, calendar, wa.send_template,
+                                        None, pending)
             if n:
                 log.info("Sent %d reminders", n)
             await asyncio.to_thread(store.cleanup)
@@ -80,13 +98,14 @@ if os.environ.get("DEMO_ENABLED", "").lower() in ("1", "true", "yes"):
     from .demo import make_demo_router
 
     shared = os.environ.get("DEMO_SHARED_CALENDAR", "").lower() in ("1", "true", "yes")
-    app.include_router(make_demo_router(salon, settings, llm, os.environ.get("DEMO_PASSWORD", ""), faq,
-                                        calendar if shared else None))
+    demo_router = make_demo_router(salon, settings, llm, os.environ.get("DEMO_PASSWORD", ""), faq,
+                                   calendar if shared else None, store if shared else None)
+    app.include_router(demo_router)
 
 if os.environ.get("OWNER_PASSWORD"):
     from .owner import make_owner_router
 
-    app.include_router(make_owner_router(booking, os.environ["OWNER_PASSWORD"]))
+    app.include_router(make_owner_router(booking, os.environ["OWNER_PASSWORD"], store, message_customer))
 
 
 @app.get("/")
